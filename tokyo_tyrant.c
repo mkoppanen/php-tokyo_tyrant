@@ -900,16 +900,18 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 static function_entry php_tokyo_tyrant_table_class_methods[] =
 {
 	/* Inherit and override */
-	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
+	// PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
 	
 	/* Table API */
-	PHP_ME(tokyotyrant, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-}
+	// PHP_ME(tokyotyrant, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+	
+	{NULL, NULL, NULL}
+};
 
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_construct_args, 0, 0, 2)
 	ZEND_ARG_OBJ_INFO(0, TokyoTyrant, TokyoTyrant, 0) 
@@ -1065,6 +1067,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	REGISTER_INI_ENTRIES();
 	
 	memcpy(&tokyo_tyrant_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	memcpy(&tokyo_tyrant_table_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	memcpy(&tokyo_tyrant_query_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	
 	INIT_CLASS_ENTRY(ce, "tokyotyrant", php_tokyo_tyrant_class_methods);
@@ -1073,9 +1076,9 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	php_tokyo_tyrant_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
 
 	INIT_CLASS_ENTRY(ce, "tokyotyranttable", php_tokyo_tyrant_table_class_methods);
-	ce.create_object = php_tokyo_tyrant_table_object_new;
-	tokyo_tyrant_table_object_handlers.clone_obj = php_tokyo_tyrant_table_clone_object;
-	php_tokyo_table_tyrant_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	ce.create_object = php_tokyo_tyrant_object_new;
+	tokyo_tyrant_table_object_handlers.clone_obj = php_tokyo_tyrant_clone_object;
+	php_tokyo_tyrant_table_sc_entry = zend_register_internal_class_ex(&ce, php_tokyo_tyrant_sc_entry, NULL TSRMLS_CC);
 	
 	INIT_CLASS_ENTRY(ce, "tokyotyrantquery", php_tokyo_tyrant_query_class_methods);
 	ce.create_object = php_tokyo_tyrant_query_object_new;
