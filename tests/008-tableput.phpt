@@ -1,5 +1,5 @@
 --TEST--
-Test add int and double
+Table put
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
@@ -9,22 +9,21 @@ skip_if_not_table();
 <?php
 include 'config.inc.php';
 
-$tt = new TokyoTyrant(TT_HOST, TT_PORT);
+$tt = new TokyoTyrantTable(TT_HOST, TT_PORT);
 $tt->vanish();
 
-$rec = $tt->tableput(array('test' => 'data', 'something' => time()));
+$rec = $tt->put(array('test' => 'data', 'something' => time()));
 var_dump($rec);
 
-$query = $tt->getQuery();
-
-
-
-
-
-
+var_dump($tt->get($rec));
 $tt->vanish();
 
 ?>
 --EXPECTF--
 int(%d)
-string(4) "test"
+array(2) {
+  ["test"]=>
+  string(4) "data"
+  ["something"]=>
+  string(10) "%d"
+}

@@ -268,8 +268,8 @@ TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS
 }
 /* }}} */
 
-/* {{{ zval *php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC) */
-zval *php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
+/* {{{ void php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC) */
+void php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 {
 	const char *name;
 	array_init(array);
@@ -278,8 +278,6 @@ zval *php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 	while ((name = tcmapiternext2(map)) != NULL) {
 		add_assoc_string(array, (char *)name, (char *)tcmapget2(map, name), 1); 
     }
-
-	return array;
 }
 /* }}} */
 

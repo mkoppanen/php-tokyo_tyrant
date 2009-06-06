@@ -478,10 +478,10 @@ PHP_METHOD(tokyotyrant, stat)
 
 /** -------- Begin table api -------- **/
 
-/* {{{ TokyoTyrantQuery TokyoTyrant::getquery();
+/* {{{ TokyoTyrantQuery TokyoTyrantTable::getquery();
 	Get query object
 */
-PHP_METHOD(tokyotyrant, getquery) 
+PHP_METHOD(tokyotyranttable, getquery) 
 {
 	php_tokyo_tyrant_object *intern;
 	php_tokyo_tyrant_query_object *intern_query;
@@ -500,18 +500,18 @@ PHP_METHOD(tokyotyrant, getquery)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrant::tableput(array keys[, int pk]);
+/* {{{ int TokyoTyrantTable::put(array kv[, int pk]);
 	Stores columns into tokyo tyrant table
 	@throws TokyoTyrantException if not connected to a table database
 	@throws TokyoTyrantException if put fails
 */
-PHP_METHOD(tokyotyrant, tableput) 
+PHP_METHOD(tokyotyranttable, put) 
 {
 	php_tokyo_tyrant_object *intern;
 	zval *keys;
 	TCMAP *map;
 	long pk = -1;
-	char *pk_str;
+	char pk_str[256];
 	int pk_str_len, code;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &keys, &pk) == FAILURE) {
@@ -525,25 +525,57 @@ PHP_METHOD(tokyotyrant, tableput)
 		if (pk == -1) {
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
 		}
-	}	
-	
+	}
 	map = php_tokyo_tyrant_zval_to_tcmap(keys, 0 TSRMLS_CC);
-	
 	if (!map) {
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to get values from the argument");
 	}
 
-	pk_str_len = spprintf(&pk_str, 256, "%ld", pk);
-	code = tcrdbtblput(intern->conn->rdb, pk_str, pk_str_len, map);
+	memset(pk_str, 0, 256);
+	pk_str_len = sprintf(pk_str, "%ld", pk);
 	
-	efree(pk_str);
+	code = tcrdbtblput(intern->conn->rdb, pk_str, pk_str_len, map);
 	tcmapdel(map);
 	
 	if (!code) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to store columns: %s");
 	}
-
 	RETURN_LONG(pk);
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::get(int pk);
+	Get a table entry
+	@throws TokyoTyrantException if not connected to a table database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, get) 
+{
+	php_tokyo_tyrant_object *intern;
+	TCMAP *map;
+	long pk = 0;
+	char pk_str[256];
+	int pk_str_len, code;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &pk) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	memset(pk_str, 0, 256);
+	pk_str_len = sprintf(pk_str, "%ld", pk);
+	
+	map = tcrdbtblget(intern->conn->rdb, pk_str, pk_str_len);
+
+	if (!map) {
+		if (tcrdbecode(intern->conn->rdb) == TTENOREC) {
+			RETURN_NULL(); /* NULL on if record is not found */
+		}
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
+	}
+
+	php_tokyo_tyrant_tcmap_to_zval(map, return_value TSRMLS_CC);
+	return;
 }
 /* }}} */
 
@@ -900,15 +932,15 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 static function_entry php_tokyo_tyrant_table_class_methods[] =
 {
 	/* Inherit and override */
-	// PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	// PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	// PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	// PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
 	// PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
 	// PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
 	
 	/* Table API */
-	// PHP_ME(tokyotyrant, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
 	
 	{NULL, NULL, NULL}
 };

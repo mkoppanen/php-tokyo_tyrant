@@ -34,7 +34,7 @@ zend_bool php_tokyo_tyrant_connect_ex(php_tokyo_tyrant_object *intern, char *hos
 
 TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC);
 
-zval *php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
+void php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
 
 zend_bool php_tokyo_tyrant_is_connected(php_tokyo_tyrant_object *intern TSRMLS_DC);
 
