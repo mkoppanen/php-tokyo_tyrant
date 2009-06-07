@@ -457,7 +457,7 @@ PHP_METHOD(tokyotyrant, vanish)
 PHP_METHOD(tokyotyrant, stat) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *status = NULL;
+	char *status = NULL, *ptr;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
 		return;
@@ -470,7 +470,26 @@ PHP_METHOD(tokyotyrant, stat)
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the status string: %s");
 	}
 	
-	RETVAL_STRING(status, 1);
+	array_init(return_value);
+	
+	/* add elements */
+	ptr = strtok(status, "\n");
+	while (ptr) {
+		char k[1024], v[1024];
+		int i;
+		
+		if (strlen(ptr) >= 1024) {
+			continue;
+		}
+		
+		memset(k, '\0', 1024);
+		memset(v, '\0', 1024);
+
+		sscanf(ptr, "%s\t%s", &k, &v);
+		add_assoc_string(return_value, k, v, 1);
+		ptr = strtok(NULL, "\n");
+	}
+	
 	free(status);
 	return;
 }
@@ -546,7 +565,7 @@ PHP_METHOD(tokyotyranttable, put)
 
 /* {{{ int TokyoTyrantTable::get(int pk);
 	Get a table entry
-	@throws TokyoTyrantException if not connected to a table database
+	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
 */
 PHP_METHOD(tokyotyranttable, get) 
@@ -569,7 +588,7 @@ PHP_METHOD(tokyotyranttable, get)
 
 	if (!map) {
 		if (tcrdbecode(intern->conn->rdb) == TTENOREC) {
-			RETURN_NULL(); /* NULL on if record is not found */
+			RETURN_NULL(); /* NULL on if record is not found otherwise exception */
 		}
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 	}

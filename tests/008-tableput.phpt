@@ -3,6 +3,7 @@ Table put
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
+include 'config.inc.php';
 skip_if_not_table();
 ?>
 --FILE--
@@ -18,6 +19,8 @@ var_dump($rec);
 var_dump($tt->get($rec));
 $tt->vanish();
 
+var_dump($tt->get(111111));
+
 ?>
 --EXPECTF--
 int(%d)
@@ -27,3 +30,4 @@ array(2) {
   ["something"]=>
   string(10) "%d"
 }
+NULL
