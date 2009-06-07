@@ -534,7 +534,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	char pk_str[256];
 	int pk_str_len, code = 0;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &keys, &pk) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|a", &pk, &keys) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
@@ -578,8 +578,8 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	RETURN_LONG(pk);
 }
 
-/* {{{ int TokyoTyrantTable::put(array row[, int pk]);
-	put a row
+/* {{{ int TokyoTyrantTable::put(int pk, array row);
+	put a row. if pk = null new key is generated
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
 */
@@ -589,7 +589,7 @@ PHP_METHOD(tokyotyranttable, put)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::putkeep(array row[, int pk]);
+/* {{{ int TokyoTyrantTable::putkeep(int pk, array row);
 	put a row
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
@@ -600,7 +600,7 @@ PHP_METHOD(tokyotyranttable, putkeep)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::putcat(array row[, int pk]);
+/* {{{ int TokyoTyrantTable::putcat(int pk, array row);
 	put a row
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
