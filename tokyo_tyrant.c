@@ -481,15 +481,15 @@ PHP_METHOD(tokyotyrant, stat)
 		if (strlen(ptr) >= 1024) {
 			continue;
 		}
-		
 		memset(k, '\0', 1024);
 		memset(v, '\0', 1024);
 
-		sscanf(ptr, "%s\t%s", &k, &v);
+		if (sscanf(ptr, "%s\t%s", k, v) != 2)
+			continue;
+
 		add_assoc_string(return_value, k, v, 1);
 		ptr = strtok(NULL, "\n");
 	}
-	
 	free(status);
 	return;
 }
