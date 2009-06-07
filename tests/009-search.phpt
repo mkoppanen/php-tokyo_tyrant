@@ -3,18 +3,17 @@ Table put variations
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
-include 'config.inc.php';
-skip_if_not_table();
 ?>
 --FILE--
 <?php
 include 'config.inc.php';
 
-$tt = new TokyoTyrantTable(TT_HOST, TT_PORT);
+$tt = new TokyoTyrantTable(TT_TABLE_HOST, TT_TABLE_PORT);
 $tt->vanish();
 
 $tt->put(null, array('test' => 'abc123111'));
 $tt->put(null, array('test' => 'cde456111'));
+$tt->put(null, array('test' => 'abba'));
 
 $query = $tt->getQuery();
 $query->addCond('test', TokyoTyrant::RDBQ_CSTREQ, 'cde456111');

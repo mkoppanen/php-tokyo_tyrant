@@ -3,8 +3,6 @@ Test multiple value put / get variations
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
-include 'config.inc.php';
-skip_if_table();
 ?>
 --FILE--
 <?php
@@ -23,7 +21,7 @@ try {
 	$tt->putkeep(array('key1' => '---', 'key2' => '---'));
 	var_dump($tt->get(array('key1', 'key2')));
 } catch (TokyoTyrantException $e) {
-	echo "got exception {$e->getMessage()}\n";
+	echo "get exception\n";
 }
 $tt->vanish();
 
@@ -43,5 +41,5 @@ array(2) {
   ["key2"]=>
   string(8) "data2---"
 }
-got exception
+get exception
 data

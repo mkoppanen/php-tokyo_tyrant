@@ -3,8 +3,6 @@ Test removing records
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
-include 'config.inc.php';
-skip_if_table();
 ?>
 --FILE--
 <?php

@@ -3,14 +3,12 @@ Table put variations
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
-include 'config.inc.php';
-skip_if_not_table();
 ?>
 --FILE--
 <?php
 include 'config.inc.php';
 
-$tt = new TokyoTyrantTable(TT_HOST, TT_PORT);
+$tt = new TokyoTyrantTable(TT_TABLE_HOST, TT_TABLE_PORT);
 $tt->vanish();
 
 $rec = $tt->put(null, array('test' => 'data', 'something' => time()));

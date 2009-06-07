@@ -3,8 +3,6 @@ Test put, get and out in a batch
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
-include 'config.inc.php';
-skip_if_table();
 ?>
 --FILE--
 <?php
