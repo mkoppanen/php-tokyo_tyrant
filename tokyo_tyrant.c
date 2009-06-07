@@ -165,6 +165,10 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRM
 		case PHP_TOKYO_TYRANT_OP_OUT:
 			code = tcrdbout2(rdb, key);
 		break;
+		
+		case PHP_TOKYO_TYRANT_OP_TBLOUT:
+			code = tcrdbtblout(rdb, key, strlen(key));
+		break;
 	}
 	return code;
 }
@@ -216,8 +220,8 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
 }
 /* }}} */
 
-/* {{{ static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) */
-static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) 
+/* {{{ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) */
+static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) 
 {
 	php_tokyo_tyrant_object *intern;
 	zval *key, *value = NULL;
@@ -234,7 +238,7 @@ static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		zend_hash_apply_with_arguments(Z_ARRVAL_P(key), (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
 		
 		if (!code) {
-			if (type  == PHP_TOKYO_TYRANT_OP_OUT) {
+			if (type  == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to remove the records: %s");
 			} else {
 				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to put the records: %s");
@@ -242,7 +246,8 @@ static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		}
 		
 	} else {
-		if (type == PHP_TOKYO_TYRANT_OP_OUT) {
+		convert_to_string(key);
+		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), NULL TSRMLS_CC)) {
 				char *message = NULL;
 				spprintf(&message, 56 + Z_STRLEN_P(key), "Unable to remove the record '%s': %%s", Z_STRVAL_P(key));
@@ -253,6 +258,8 @@ static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 			if (!value) {
 				PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to store the record: no value provided");
 			}
+			
+			convert_to_string(value);
 			
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
 				char *message = NULL;
@@ -273,7 +280,7 @@ static void _php_tt_put_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 */
 PHP_METHOD(tokyotyrant, put) 
 {
-	_php_tt_put_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUT);
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUT);
 }
 /* }}} */
 
@@ -284,7 +291,7 @@ PHP_METHOD(tokyotyrant, put)
 */
 PHP_METHOD(tokyotyrant, putkeep) 
 {
-	_php_tt_put_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTKEEP);
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTKEEP);
 }
 /* }}} */
 
@@ -295,7 +302,7 @@ PHP_METHOD(tokyotyrant, putkeep)
 */
 PHP_METHOD(tokyotyrant, putcat) 
 {
-	_php_tt_put_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTCAT);
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTCAT);
 }
 /* }}} */
 
@@ -305,7 +312,7 @@ PHP_METHOD(tokyotyrant, putcat)
 */
 PHP_METHOD(tokyotyrant, out) 
 {
-	_php_tt_put_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_OUT);
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_OUT);
 }
 /* }}} */
 
@@ -458,6 +465,7 @@ PHP_METHOD(tokyotyrant, stat)
 {
 	php_tokyo_tyrant_object *intern;
 	char *status = NULL, *ptr;
+	char k[1024], v[1024];
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
 		return;
@@ -475,18 +483,15 @@ PHP_METHOD(tokyotyrant, stat)
 	/* add elements */
 	ptr = strtok(status, "\n");
 	while (ptr) {
-		char k[1024], v[1024];
-		int i;
-		
 		if (strlen(ptr) >= 1024) {
 			continue;
 		}
 		memset(k, '\0', 1024);
 		memset(v, '\0', 1024);
 
-		if (sscanf(ptr, "%s\t%s", k, v) != 2)
+		if (sscanf(ptr, "%s\t%s", k, v) != 2) {
 			continue;
-
+		}
 		add_assoc_string(return_value, k, v, 1);
 		ptr = strtok(NULL, "\n");
 	}
@@ -519,19 +524,15 @@ PHP_METHOD(tokyotyranttable, getquery)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::put(array kv[, int pk]);
-	Stores columns into tokyo tyrant table
-	@throws TokyoTyrantException if not connected to a table database
-	@throws TokyoTyrantException if put fails
-*/
-PHP_METHOD(tokyotyranttable, put) 
+
+static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 {
 	php_tokyo_tyrant_object *intern;
 	zval *keys;
 	TCMAP *map;
 	long pk = -1;
 	char pk_str[256];
-	int pk_str_len, code;
+	int pk_str_len, code = 0;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &keys, &pk) == FAILURE) {
 		return;
@@ -546,20 +547,78 @@ PHP_METHOD(tokyotyranttable, put)
 		}
 	}
 	map = php_tokyo_tyrant_zval_to_tcmap(keys, 0 TSRMLS_CC);
+	
 	if (!map) {
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to get values from the argument");
 	}
 
-	memset(pk_str, 0, 256);
+	memset(pk_str, '\0', 256);
 	pk_str_len = sprintf(pk_str, "%ld", pk);
 	
-	code = tcrdbtblput(intern->conn->rdb, pk_str, pk_str_len, map);
+	switch (type) {
+		
+		case PHP_TOKYO_TYRANT_OP_TBLPUT:
+			code = tcrdbtblput(intern->conn->rdb, pk_str, pk_str_len, map);
+		break;
+
+		case PHP_TOKYO_TYRANT_OP_TBLPUTKEEP:
+			code = tcrdbtblputkeep(intern->conn->rdb, pk_str, pk_str_len, map);
+		break;
+		
+		case PHP_TOKYO_TYRANT_OP_TBLPUTCAT:
+			code = tcrdbtblputcat(intern->conn->rdb, pk_str, pk_str_len, map);
+		break;
+	}
+
 	tcmapdel(map);
 	
 	if (!code) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to store columns: %s");
 	}
 	RETURN_LONG(pk);
+}
+
+/* {{{ int TokyoTyrantTable::put(array row[, int pk]);
+	put a row
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, put)
+{
+	_php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_TBLPUT);
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::putkeep(array row[, int pk]);
+	put a row
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, putkeep)
+{
+	_php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_TBLPUTKEEP);
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::putcat(array row[, int pk]);
+	put a row
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, putcat)
+{
+	_php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_TBLPUTCAT);
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::add(void);
+	not supported
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, add)
+{
+	PHP_TOKYO_TYRANT_EXCEPTION_MSG("add operation is not supported with table databases");
 }
 /* }}} */
 
@@ -595,6 +654,17 @@ PHP_METHOD(tokyotyranttable, get)
 
 	php_tokyo_tyrant_tcmap_to_zval(map, return_value TSRMLS_CC);
 	return;
+}
+/* }}} */
+
+/* {{{ boolean TokyoTyrantTable::out(mixed pk);
+	Remove an entry
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, out) 
+{
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_TBLOUT);
 }
 /* }}} */
 
@@ -950,13 +1020,13 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 
 static function_entry php_tokyo_tyrant_table_class_methods[] =
 {
-	/* Inherit and override */
+	/* Inherit and override. TODO: arginfos */
 	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	// PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	// PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
-	// PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
-	// PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
 	
 	/* Table API */
 	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)

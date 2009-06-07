@@ -251,7 +251,7 @@ TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS
 			n = zend_hash_get_current_key_ex(Z_ARRVAL_P(array), &arr_key, &arr_key_len, &num_key, 0, &pos);
 
 			if (n == HASH_KEY_IS_LONG) {
-				spprintf(&arr_key, 15, "%ld", num_key);
+				spprintf(&arr_key, 78, "%ld", num_key);
 				allocated = 1;
 			}
 			

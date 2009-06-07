@@ -17,6 +17,9 @@ $rec = $tt->put(array('test' => 'data', 'something' => time()));
 var_dump($rec);
 
 var_dump($tt->get($rec));
+
+$tt->out($rec);
+var_dump($tt->get($rec));
 $tt->vanish();
 
 var_dump($tt->get(111111));
@@ -30,4 +33,5 @@ array(2) {
   ["something"]=>
   string(10) "%d"
 }
+NULL
 NULL
