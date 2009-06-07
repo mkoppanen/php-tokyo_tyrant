@@ -35,7 +35,7 @@ array(2) {
   ["test"]=>
   string(4) "data"
   ["something"]=>
-  string(10) "1244412251"
+  string(10) "%d"
 }
 array(2) {
   ["test"]=>

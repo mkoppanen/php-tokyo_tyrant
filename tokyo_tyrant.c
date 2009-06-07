@@ -530,31 +530,36 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	php_tokyo_tyrant_object *intern;
 	zval *keys;
 	TCMAP *map;
-	long pk = -1;
+	zval *pk_arg;
 	char pk_str[256];
 	int pk_str_len, code = 0;
+	long pk;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|a", &pk, &keys) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "za", &pk_arg, &keys) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	if (pk == -1) {
+	if (Z_TYPE_P(pk_arg) == IS_NULL) {
 		pk = (long)tcrdbtblgenuid(intern->conn->rdb);
 		
 		if (pk == -1) {
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
 		}
+	} else {
+		convert_to_long(pk_arg);
+		pk = Z_LVAL_P(pk_arg);
 	}
+	
+	memset(pk_str, '\0', 256);
+	pk_str_len = sprintf(pk_str, "%ld", pk);
+	
 	map = php_tokyo_tyrant_zval_to_tcmap(keys, 0 TSRMLS_CC);
 	
 	if (!map) {
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to get values from the argument");
 	}
 
-	memset(pk_str, '\0', 256);
-	pk_str_len = sprintf(pk_str, "%ld", pk);
-	
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_OP_TBLPUT:
@@ -665,6 +670,31 @@ PHP_METHOD(tokyotyranttable, get)
 PHP_METHOD(tokyotyranttable, out) 
 {
 	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_TBLOUT);
+}
+/* }}} */
+
+/* {{{ boolean TokyoTyrantTable::setIndex(mixed pk);
+	Set index
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if get fails
+*/
+PHP_METHOD(tokyotyranttable, setindex) 
+{
+	php_tokyo_tyrant_object *intern;
+	char *name;
+	int name_len;
+	long type;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &name, &name_len, &type) == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	if (!tcrdbtblsetindex(intern->conn->rdb, name, type)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set index: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
 
@@ -1018,6 +1048,11 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 	{NULL, NULL, NULL} 
 };
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_table_setindex_args, 0, 0, 2)
+	ZEND_ARG_INFO(0, column)
+	ZEND_ARG_INFO(0, type)
+ZEND_END_ARG_INFO()
+
 static function_entry php_tokyo_tyrant_table_class_methods[] =
 {
 	/* Inherit and override. TODO: arginfos */
@@ -1027,7 +1062,7 @@ static function_entry php_tokyo_tyrant_table_class_methods[] =
 	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
-	
+	PHP_ME(tokyotyranttable, setindex,	tokyo_tyrant_table_setindex_args,			ZEND_ACC_PUBLIC)
 	/* Table API */
 	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
 	
@@ -1218,7 +1253,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	
 	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTREQ", RDBQCSTREQ); 		/* string is equal to */
 	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRINC", RDBQCSTRINC);		/* string is included in */
-  	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRBW",RDBQCSTRBW);			/* string begins with */
+  	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRBW", RDBQCSTRBW);		/* string begins with */
 	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTREW", RDBQCSTREW);		/* string ends with */
 	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRAND", RDBQCSTRAND);		/* string includes all tokens in */
 	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTROR", RDBQCSTROR);		/* string includes at least one token in */
@@ -1238,6 +1273,12 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRDESC", RDBQOSTRDESC);	/* string descending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_NUMASC", RDBQONUMASC);		/* number ascending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_NUMDESC", RDBQONUMDESC);	/* number descending */
+	
+	TOKYO_REGISTER_CONST_LONG("RDBIT_LEXICAL", RDBITLEXICAL);
+	TOKYO_REGISTER_CONST_LONG("RDBIT_DECIMAL", RDBITDECIMAL);
+	TOKYO_REGISTER_CONST_LONG("RDBIT_OPT", RDBITOPT);
+	TOKYO_REGISTER_CONST_LONG("RDBIT_VOID", RDBITVOID);
+	TOKYO_REGISTER_CONST_LONG("RDBIT_KEEP", RDBITKEEP);
 	
 	/* Not required, these are passed in during connecting
 	TOKYO_REGISTER_CONST_LONG("RDBTRECON", RDBTRECON); */   
