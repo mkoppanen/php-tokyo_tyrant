@@ -170,6 +170,14 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRM
 			code = tcrdbtblout(rdb, key, strlen(key));
 		break;
 	}
+	
+	/* TODO: maybe add strict flag but ignore non-existent keys for now */
+	if (!code) {
+		if (tcrdbecode(rdb) == TTENOREC) {
+			code = 1;
+		}
+	}
+	
 	return code;
 }
 /* }}} */
@@ -205,7 +213,7 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
 	INIT_PZVAL(&tmpcopy);
 	convert_to_string(&tmpcopy);
 	
-	if (type == PHP_TOKYO_TYRANT_OP_OUT) {
+	if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), NULL TSRMLS_CC);
 	} else {
 		*code = _php_tt_real_write(intern->conn->rdb, type, key, Z_STRVAL(tmpcopy) TSRMLS_CC);
@@ -234,7 +242,6 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (Z_TYPE_P(key) == IS_ARRAY) {
-		
 		zend_hash_apply_with_arguments(Z_ARRVAL_P(key), (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
 		
 		if (!code) {
@@ -247,6 +254,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		
 	} else {
 		convert_to_string(key);
+		
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), NULL TSRMLS_CC)) {
 				char *message = NULL;
@@ -638,7 +646,7 @@ PHP_METHOD(tokyotyranttable, get)
 	TCMAP *map;
 	long pk = 0;
 	char pk_str[256];
-	int pk_str_len, code;
+	int pk_str_len;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &pk) == FAILURE) {
 		return;
@@ -673,7 +681,7 @@ PHP_METHOD(tokyotyranttable, out)
 }
 /* }}} */
 
-/* {{{ boolean TokyoTyrantTable::setIndex(mixed pk);
+/* {{{ boolean TokyoTyrantTable::setIndex(string name, CONST type);
 	Set index
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
