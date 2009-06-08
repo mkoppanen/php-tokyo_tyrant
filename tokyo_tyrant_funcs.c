@@ -301,3 +301,28 @@ zend_bool php_tokyo_tyrant_init_tt_query_object(php_tokyo_tyrant_query_object *q
 }
 /* }}} */
 
+/* void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC) */
+void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
+{
+	const char *rbuf, *name;
+	int i, rsiz;
+	TCMAP *cols;
+	
+	for (i = 0; i < tclistnum(res); i++) {
+		rbuf = tclistval(res, i, &rsiz);
+		cols = tcrdbtblget(rdb, rbuf, rsiz);
+		if (cols) {
+			zval *row;
+			tcmapiterinit(cols);
+			
+			MAKE_STD_ZVAL(row);
+			array_init(row);
+			
+			while ((name = tcmapiternext2(cols)) != NULL) {
+				add_assoc_string(row, (char *)name, (char *)tcmapget2(cols, name), 1); 
+			}
+			tcmapdel(cols);
+			add_assoc_zval(container, (char *)rbuf, row);
+		}
+	}
+}

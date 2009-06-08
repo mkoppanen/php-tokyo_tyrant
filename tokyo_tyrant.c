@@ -362,9 +362,6 @@ PHP_METHOD(tokyotyrant, get)
 		zval_dtor(&tmpcopy);
 		
 		if (!value) {
-			if (tcrdbecode(intern->conn->rdb) == TTENOREC) {
-				RETURN_NULL(); /* NULL on if record is not found */
-			}
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 		}
 		RETVAL_STRING(value, 1);
@@ -504,6 +501,59 @@ PHP_METHOD(tokyotyrant, stat)
 		ptr = strtok(NULL, "\n");
 	}
 	free(status);
+	return;
+}
+/* }}} */
+
+/* {{{ string TokyoTyrant::size(string key);
+	Gets the status string of the remote database
+*/
+PHP_METHOD(tokyotyrant, size)
+{
+	php_tokyo_tyrant_object *intern;
+	char *key;
+	int key_len;
+	long rec_len;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	rec_len = tcrdbvsiz2(intern->conn->rdb, key);
+	
+	if (rec_len == -1) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record size: %s");
+	}
+	RETURN_LONG(rec_len);
+}
+/* }}} */
+
+/* {{{ array TokyoTyrant::fwmkeys(string prefix, int max_records) */
+PHP_METHOD(tokyotyrant, fwmkeys)
+{
+	php_tokyo_tyrant_object *intern;
+	char *prefix;
+	int prefix_len;
+	long max_recs;
+	TCLIST *res = NULL;
+	const char *rbuf;
+	int i, rsiz;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &prefix, &prefix_len, &max_recs) == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	res = tcrdbfwmkeys2(intern->conn->rdb, prefix, max_recs);
+
+	array_init(return_value);
+	
+	for (i = 0; i < tclistnum(res); i++) {
+		rbuf = tclistval(res, i, &rsiz);
+		add_next_index_stringl(return_value, (char *)rbuf, rsiz, 1);
+	}
+	
+	tclistdel(res);
 	return;
 }
 /* }}} */
@@ -659,9 +709,6 @@ PHP_METHOD(tokyotyranttable, get)
 	map = tcrdbtblget(intern->conn->rdb, pk_str, pk_str_len);
 
 	if (!map) {
-		if (tcrdbecode(intern->conn->rdb) == TTENOREC) {
-			RETURN_NULL(); /* NULL on if record is not found otherwise exception */
-		}
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 	}
 
@@ -776,9 +823,6 @@ PHP_METHOD(tokyotyrantquery, search)
 {
 	php_tokyo_tyrant_query_object *intern;
 	TCLIST *res;
-	TCMAP *cols;
-	const char *rbuf, *name;
-	int i, rsiz;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
 		return;
@@ -788,24 +832,9 @@ PHP_METHOD(tokyotyrantquery, search)
 	res    = tcrdbqrysearch(intern->qry);
 	array_init(return_value);
 	
-	for (i = 0; i < tclistnum(res); i++) {
-		rbuf = tclistval(res, i, &rsiz);
-		cols = tcrdbtblget(intern->conn->rdb, rbuf, rsiz);
-		if (cols) {
-			zval *row;
-			tcmapiterinit(cols);
-			
-			MAKE_STD_ZVAL(row);
-			array_init(row);
-			
-			while ((name = tcmapiternext2(cols)) != NULL) {
-				add_assoc_string(row, (char *)name, (char *)tcmapget2(cols, name), 1); 
-			}
-			tcmapdel(cols);
-			add_assoc_zval(return_value, (char *)rbuf, row);
-		}
-	}
+	php_tokyo_tyrant_tclist_to_array(intern->conn->rdb, res, return_value TSRMLS_CC);
 	tclistdel(res);
+	
 	return;
 }
 /* }}} */
@@ -1036,6 +1065,15 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_add_args, 0, 0, 2)
 	ZEND_ARG_INFO(0, type)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_size_args, 0, 0, 1)
+	ZEND_ARG_INFO(0, key)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_fwmkeys_args, 0, 0, 2)
+	ZEND_ARG_INFO(0, prefix)
+	ZEND_ARG_INFO(0, max_recs)
+ZEND_END_ARG_INFO()
+
 static function_entry php_tokyo_tyrant_class_methods[] =
 {
 	PHP_ME(tokyotyrant, __construct,	tokyo_tyrant_construct_args,	ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -1044,6 +1082,8 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 	PHP_ME(tokyotyrant, sync,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, vanish,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)	
 	PHP_ME(tokyotyrant, stat,			tokyo_tyrant_stat_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, size,			tokyo_tyrant_size_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, fwmkeys,		tokyo_tyrant_fwmkeys_args,			ZEND_ACC_PUBLIC)
 	
 	/* These are the shared methods */
 	PHP_ME(tokyotyrant, put,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)

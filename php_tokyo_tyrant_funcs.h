@@ -38,4 +38,6 @@ void php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
 
 zend_bool php_tokyo_tyrant_is_connected(php_tokyo_tyrant_object *intern TSRMLS_DC);
 
+void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC);
+
 #endif

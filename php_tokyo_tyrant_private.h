@@ -97,6 +97,9 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)
 #define PHP_TOKYO_TYRANT_EXCEPTION(intern, format) \
 { \
 	int error_code = tcrdbecode(intern->conn->rdb); \
+	if (tcrdbecode(intern->conn->rdb) == TTENOREC) { \
+		RETURN_NULL(); \
+	} \
 	zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 1 TSRMLS_CC, format, tcrdberrmsg(error_code)); \
 	return; \
 }

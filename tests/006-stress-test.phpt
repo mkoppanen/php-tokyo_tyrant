@@ -8,7 +8,7 @@ include dirname(__FILE__) . "/skipif.inc.php";
 <?php
 include 'config.inc.php';
 
-$values = 10000;
+$values = 100;
 $tt = new TokyoTyrant(TT_HOST, TT_PORT);
 
 $time = microtime(true);
