@@ -505,8 +505,8 @@ PHP_METHOD(tokyotyrant, stat)
 }
 /* }}} */
 
-/* {{{ string TokyoTyrant::size(string key);
-	Gets the status string of the remote database
+/* {{{ int TokyoTyrant::size(string key);
+	Get the size of a row
 */
 PHP_METHOD(tokyotyrant, size)
 {
@@ -525,6 +525,21 @@ PHP_METHOD(tokyotyrant, size)
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record size: %s");
 	}
 	RETURN_LONG(rec_len);
+}
+/* }}} */
+
+/* {{{ int TokyoTyrant::num();
+	Number of records in the database
+*/
+PHP_METHOD(tokyotyrant, num)
+{
+	php_tokyo_tyrant_object *intern;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	RETURN_LONG(tcrdbrnum(intern->conn->rdb));
 }
 /* }}} */
 
@@ -555,6 +570,106 @@ PHP_METHOD(tokyotyrant, fwmkeys)
 	
 	tclistdel(res);
 	return;
+}
+/* }}} */
+
+/* {{{ string TokyoTyrant::ext(string name, CONST opts, string key, string value);
+	Get the size of a row
+*/
+PHP_METHOD(tokyotyrant, ext)
+{
+	php_tokyo_tyrant_object *intern;
+	char *name, *key, *value, *response;
+	int name_len, key_len, value_len;
+	long opts;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slss", &name, &name_len, &opts, &key, &key_len, &value, &value_len) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	response = tcrdbext2(intern->conn->rdb, name, opts, key, value);
+
+	if (!response) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to execute the remote script: %s");
+	}
+	RETVAL_STRING(response, 1);
+	free(response);
+	return;
+}
+/* }}} */
+
+/* {{{ int TokyoTyrant::copy(string path);
+	Copy the database
+*/
+PHP_METHOD(tokyotyrant, copy)
+{
+	php_tokyo_tyrant_object *intern;
+	char *path;
+	int path_len;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &path_len) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+
+	if (!tcrdbcopy(intern->conn->rdb, path)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to copy the database: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+
+/* {{{ TokyoTyrant TokyoTyrant::restore(string log_dir, int timestamp[, bool check_consistency = true]);
+	restore the database
+*/
+PHP_METHOD(tokyotyrant, restore)
+{
+	php_tokyo_tyrant_object *intern;
+	char *path;
+	int path_len;
+	long ts, opts;
+	zend_bool check_consistency = 1;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &path, &path_len, &ts, &check_consistency) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	if (check_consistency) {
+		opts |= RDBROCHKCON;
+	}
+
+	if (!tcrdbcopy(intern->conn->rdb, path)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to copy the database: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+
+/* {{{ TokyoTyrant TokyoTyrant::setMaster(string host, int port, int timestamp[, zend_bool check_consistency]);
+	Set the master
+*/
+PHP_METHOD(tokyotyrant, setmaster)
+{
+	php_tokyo_tyrant_object *intern;
+	char *host;
+	int host_len;
+	long ts, opts = 0, port;
+	zend_bool check_consistency = 1;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll|b", &host, &host_len, &port, &ts, &check_consistency) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	if (check_consistency) {
+		opts |= RDBROCHKCON;
+	}
+
+	if (!tcrdbsetmst(intern->conn->rdb, host, port, ts, opts)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set the master: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
 
@@ -1074,16 +1189,47 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_fwmkeys_args, 0, 0, 2)
 	ZEND_ARG_INFO(0, max_recs)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_ext_args, 0, 0, 4)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, options)
+	ZEND_ARG_INFO(0, key)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_copy_args, 0, 0, 1)
+	ZEND_ARG_INFO(0, path)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_restore_args, 0, 0, 2)
+	ZEND_ARG_INFO(0, log_dir)
+	ZEND_ARG_INFO(0, timestamp)
+	ZEND_ARG_INFO(0, check_consistency)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_setmaster_args, 0, 0, 3)
+	ZEND_ARG_INFO(0, host)
+	ZEND_ARG_INFO(0, port)
+	ZEND_ARG_INFO(0, timestamp)
+	ZEND_ARG_INFO(0, check_consistency)
+ZEND_END_ARG_INFO()
+
 static function_entry php_tokyo_tyrant_class_methods[] =
 {
 	PHP_ME(tokyotyrant, __construct,	tokyo_tyrant_construct_args,	ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(tokyotyrant, connect,		tokyo_tyrant_connect_args,		ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, connecturi,		tokyo_tyrant_connecturi_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrant, sync,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, vanish,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)	
 	PHP_ME(tokyotyrant, stat,			tokyo_tyrant_stat_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, fwmkeys,		tokyo_tyrant_fwmkeys_args,		ZEND_ACC_PUBLIC)
+	
 	PHP_ME(tokyotyrant, size,			tokyo_tyrant_size_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrant, fwmkeys,		tokyo_tyrant_fwmkeys_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, num,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
+	
+	PHP_ME(tokyotyrant, sync,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, ext,			tokyo_tyrant_ext_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, copy,			tokyo_tyrant_copy_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, restore,		tokyo_tyrant_restore_args,		ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, setmaster,		tokyo_tyrant_setmaster_args,	ZEND_ACC_PUBLIC)
 	
 	/* These are the shared methods */
 	PHP_ME(tokyotyrant, put,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
