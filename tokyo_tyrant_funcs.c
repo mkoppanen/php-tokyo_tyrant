@@ -169,10 +169,10 @@ zend_bool php_tokyo_tyrant_connect_ex(php_tokyo_tyrant_object *intern, char *hos
 	if (!intern->conn) {
 		/* New connection object */
 		intern->conn = php_tokyo_tyrant_conn_init(TSRMLS_C);
-		
+	
 		/* Set options and timeout */
 		tcrdbtune(intern->conn->rdb, timeout, options);
-	
+
 		if (!tcrdbopen(intern->conn->rdb, host, port)) {
 			return 0;
 		}

@@ -3,6 +3,8 @@ PHP_ARG_WITH(tokyo-tyrant, whether to enable tokyo tyrant handler support,
 
 if test "$PHP_TOKYO_TYRANT" != "no"; then
 
+  AC_MSG_CHECKING(for tcrdb.h)
+
   for i in $PHP_TOKYO_TYRANT /usr /usr/local; do
     test -r $i/include/tcrdb.h && TYRANT_PREFIX=$i && break 
   done
@@ -11,7 +13,16 @@ if test "$PHP_TOKYO_TYRANT" != "no"; then
     AC_MSG_ERROR(unable to find tcrdb.h)
   fi
 
-  PHP_ADD_INCLUDE($TYRANT_PREFIX/include)
+  AC_MSG_RESULT(found in $TYRANT_PREFIX)
+
+  dnl Check functionality
+  PHP_CHECK_LIBRARY(tokyotyrant, tcrdbsetecode,
+  [],[
+    AC_MSG_ERROR([Tokyo Tyrant version >= 1.1.24 not found])
+  ],[
+    -L$TYRANT_PREFIX/lib
+  ])
+
   PHP_ADD_LIBRARY_WITH_PATH(tokyocabinet, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
   PHP_ADD_LIBRARY_WITH_PATH(tokyotyrant, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
 

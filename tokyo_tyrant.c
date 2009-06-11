@@ -661,11 +661,11 @@ PHP_METHOD(tokyotyrant, setmaster)
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
-	
+
 	if (check_consistency) {
 		opts |= RDBROCHKCON;
 	}
-
+	
 	if (!tcrdbsetmst(intern->conn->rdb, host, port, ts, opts)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set the master: %s");
 	}

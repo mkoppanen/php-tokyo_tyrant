@@ -3,6 +3,7 @@ Test single value put / get variations
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
+die('x');
 ?>
 --FILE--
 <?php
