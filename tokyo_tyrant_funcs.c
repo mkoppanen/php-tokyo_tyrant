@@ -18,11 +18,10 @@
 
 #include "php_tokyo_tyrant_funcs.h"
 
-/* {{{ zend_bool php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC) */
-zend_bool php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC)
+/* {{{ void php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC) */
+void php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC)
 {
 	intern->conn = NULL;
-	return 1;
 }
 /* }}} */
 
@@ -44,11 +43,11 @@ void php_tokyo_tyrant_hash_void_dtor(php_tokyo_tyrant_conn **conn TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout, int options TSRMLS_DC) */
-char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout, int options TSRMLS_DC)
+/* {{{ char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC) */
+char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC)
 {
 	char *buffer;
-	*key_len = spprintf(&buffer, strlen(host) + 256, "%s|%d|%f|%d", host, port, timeout, options);
+	*key_len = spprintf(&buffer, strlen(host) + 256, "%s|%d|%f", host, port, timeout);
 	return buffer;	
 }
 /* }}} */
@@ -68,7 +67,7 @@ php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double 
 {
 	php_tokyo_tyrant_conn **conn;
 	int pkey_len;
-	char *pkey = php_tokyo_tyrant_phash_key(host, port, &pkey_len, timeout, options TSRMLS_CC);
+	char *pkey = php_tokyo_tyrant_phash_key(host, port, &pkey_len, timeout TSRMLS_CC);
 	php_tokyo_tyrant_allocate_conn_pool(TSRMLS_C);
 	
 	if (zend_hash_find(TOKYO_G(connections), pkey, pkey_len + 1, (void **)&conn) == SUCCESS) {
@@ -85,7 +84,7 @@ php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double 
 zend_bool php_tokyo_tyrant_save_pconn(php_tokyo_tyrant_conn *conn TSRMLS_DC)
 {
 	int pkey_len;
-	char *pkey = php_tokyo_tyrant_phash_key(conn->host, conn->port, &pkey_len, conn->timeout, conn->options TSRMLS_CC);
+	char *pkey = php_tokyo_tyrant_phash_key(conn->host, conn->port, &pkey_len, conn->timeout TSRMLS_CC);
 	php_tokyo_tyrant_allocate_conn_pool(TSRMLS_C);
 	
 	if (zend_hash_update(TOKYO_G(connections), pkey, pkey_len + 1, (void *)&conn, sizeof(php_tokyo_tyrant_conn *), NULL) == SUCCESS) {

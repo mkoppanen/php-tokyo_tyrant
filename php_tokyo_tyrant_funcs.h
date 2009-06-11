@@ -22,7 +22,7 @@
 #include "php_tokyo_tyrant.h"
 #include "php_tokyo_tyrant_private.h"
 
-zend_bool php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC);
+void php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC);
 
 zend_bool php_tokyo_tyrant_init_tt_query_object(php_tokyo_tyrant_query_object *intern, zval *parent TSRMLS_DC);
 
