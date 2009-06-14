@@ -143,12 +143,10 @@ zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_r
 zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_part, char *pk, int pk_len, const char *data, int data_len) 
 {
 	TCMAP *cols;
-
 	char timestamp[64];
 	time_t expiration;
 
-	/* TODO: figure out if it makes sense to store empty data. Currently not storing */
-	if (!data || data_len == 0) {
+	if (!data) {
 		return 1;
 	}
 	
@@ -161,9 +159,9 @@ zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_
 	/* store a record */
 	cols = tcmapnew();
 	
-	tcmapput2(cols, "hash",   rand_part);
+	tcmapput2(cols, "hash", rand_part);
 	tcmapput2(cols, "data", data);
-	tcmapput2(cols, "ts",    timestamp);
+	tcmapput2(cols, "ts",   timestamp);
 
 	if (!tcrdbtblput(session->obj_conn->conn->rdb, pk, pk_len, cols)) {
 		tcmapdel(cols);
@@ -235,7 +233,7 @@ zend_bool php_tokyo_session_delete_where(php_tokyo_tyrant_session *session, char
 	tcrdbqryaddcond(qry, key, RDBQCSTROR, value);
 	tcrdbqrysetlimit(qry, limit, 0);
 	
-	res  = tcrdbqrysearch(qry);
+	res = tcrdbqrysearch(qry);
 	
 	for (i = 0; i < tclistnum(res); i++) {
 		rbuf = tclistval(res, i, &rsiz);
@@ -256,6 +254,7 @@ zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk,
 	if (tcrdbtblout(session->obj_conn->conn->rdb, pk, pk_len)) {
 		return 1;
 	} else {
+		/* TTENOREC means that record did not exist. This should not cause error */
 		if (tcrdbecode(session->obj_conn->conn->rdb) == TTENOREC) {
 			return 1;
 		}
@@ -300,7 +299,7 @@ zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand
 	char *ptr = NULL;
 	
 	/* Should be a fairly sensible limitation */
-	if (strlen(orig_sess_id) >= 1024) {
+	if (strlen(orig_sess_id) >= 512) {
 		return 0;
 	}
 		
@@ -314,13 +313,13 @@ zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand
 		}
 	}
 
-	*sess_rand = emalloc(64);
+	*sess_rand = emalloc(65);
 	*checksum  = emalloc(41);
-	*pk_str    = emalloc(64);
+	*pk_str    = emalloc(65);
 	
-	memset(*sess_rand, '\0', 64);
+	memset(*sess_rand, '\0', 65);
 	memset(*checksum,  '\0', 41);
-	memset(*pk_str,    '\0', 64);
+	memset(*pk_str,    '\0', 65);
 	
 	matches = sscanf(ptr, "%64s %40s %d %64s", *sess_rand, *checksum, &(*idx), *pk_str);
 	efree(ptr);
