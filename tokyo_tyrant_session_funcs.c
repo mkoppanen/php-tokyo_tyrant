@@ -161,9 +161,9 @@ zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_
 	/* store a record */
 	cols = tcmapnew();
 	
-	tcmapput2(cols, "session_id",   rand_part);
-	tcmapput2(cols, "session_data", data);
-	tcmapput2(cols, "timestamp",    timestamp);
+	tcmapput2(cols, "hash",   rand_part);
+	tcmapput2(cols, "data", data);
+	tcmapput2(cols, "ts",    timestamp);
 
 	if (!tcrdbtblput(session->obj_conn->conn->rdb, pk, pk_len, cols)) {
 		tcmapdel(cols);
@@ -183,12 +183,12 @@ char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, ch
 	cols = tcrdbtblget(session->obj_conn->conn->rdb, pk, pk_len);
 	
 	if (cols) {
-		const char *checksum = tcmapget2(cols, "session_id");
+		const char *checksum = tcmapget2(cols, "hash");
 
 		/* Make sure that session id in the db matches the one we want
 		 	Protects against scenarios where new nodes are added in the middle of the pack.*/
 		if (strcmp(checksum, rand_part) == 0) {
-			buffer = estrdup(tcmapget2(cols, "session_data"));
+			buffer = estrdup(tcmapget2(cols, "data"));
 			*data_len = strlen(buffer);
 		}
 		tcmapdel(cols);
@@ -207,7 +207,7 @@ char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const
 	*data_len = 0;
 	qry = tcrdbqrynew(session->obj_conn->conn->rdb);
 
-	tcrdbqryaddcond(qry, "session_id", RDBQCSTROR, session_id);
+	tcrdbqryaddcond(qry, "hash", RDBQCSTROR, session_id);
 	tcrdbqrysetlimit(qry, 1, 0);
 
 	res  = tcrdbqrysearch(qry);
@@ -355,15 +355,13 @@ char *php_tokyo_tyrant_validate_pk(char *session_id, int session_id_len, char *s
 	sha1_str = php_tokyo_tyrant_create_checksum(sess_rand, idx, pk_str, salt);
  	
 	if (strlen(sha1_str) == strlen(checksum)) {
-		if (strcmp(sha1_str, checksum) == 0) {
-			
+		if (strcmp(sha1_str, checksum) == 0) {	
 			efree(sess_rand);
 			efree(checksum);
-			efree(pk_str);
 			
 			/* Hash matches, we are set to go */
 			efree(sha1_str);
-			return estrdup(pk_str);
+			return pk_str;
 		}
 	}
 	
