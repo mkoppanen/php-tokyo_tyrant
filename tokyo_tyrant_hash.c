@@ -16,30 +16,46 @@
   +----------------------------------------------------------------------+
 */
 
-#ifndef _PHP_TOKYO_SESSION_H_
-# define _PHP_TOKYO_SESSION_H_
+#include "php_tokyo_tyrant.h"
+#include "php_tokyo_tyrant_private.h"
+#include "php_tokyo_tyrant_session.h"
 
-typedef struct _php_tokyo_tyrant_session {
-	char  **host;
-	int    *port;
-	double *timeout;
-	
-	size_t server_count;
-	php_tokyo_tyrant_object *obj_conn;
-	
-	char *pk;
-	int  pk_len;
-	
-	char *rand_part;
-	char *checksum;
-	
-	int idx;
-	zend_bool regenerated;
-	
-} php_tokyo_tyrant_session;
+/* modulo hashing */
+int php_tokyo_tyrant_simple_hash(php_tokyo_tyrant_session *session, char *key)
+{
+	unsigned int hash = 5381;
+	const char *s;
 
-int (*php_tokyo_hash_func)(php_tokyo_tyrant_session *session, char *key);
-#endif
+	if (session->server_count == 0) {
+		return -1;
+	}
+
+	if (key == NULL) 
+		return 0;
+
+	for (s = key; *s; s++) {
+		hash = ((hash << 5) + hash) + *s;
+	}
+
+	hash &= 0x7FFFFFFF;	
+	return hash % session->server_count;
+}
+
+/* TODO: other hashing functions (?) */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

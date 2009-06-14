@@ -15,31 +15,10 @@
   | Authors: Mikko Koppanen <mkoppanen@php.net>                          |
   +----------------------------------------------------------------------+
 */
+#ifndef _PHP_TOKYO_TYRANT_HASH_H_
+# define _PHP_TOKYO_TYRANT_HASH_H_
 
-#ifndef _PHP_TOKYO_SESSION_H_
-# define _PHP_TOKYO_SESSION_H_
+/* Simple modulo based hashing. Not sure if there is need for consistent hashing */
+int php_tokyo_tyrant_simple_hash(php_tokyo_tyrant_session *session, char *key);
 
-typedef struct _php_tokyo_tyrant_session {
-	char  **host;
-	int    *port;
-	double *timeout;
-	
-	size_t server_count;
-	php_tokyo_tyrant_object *obj_conn;
-	
-	char *pk;
-	int  pk_len;
-	
-	char *rand_part;
-	char *checksum;
-	
-	int idx;
-	zend_bool regenerated;
-	
-} php_tokyo_tyrant_session;
-
-int (*php_tokyo_hash_func)(php_tokyo_tyrant_session *session, char *key);
-#endif
-
-
-
+#endif /* _PHP_TOKYO_TYRANT_HASH_H_ */

@@ -24,10 +24,6 @@
 
 #include "ext/standard/sha1.h"
 
-char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *, const char *pk, int pk_len, int *data_len);
-
-zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand, char **checksum, int *idx, char **pk_str);
-
 php_tokyo_tyrant_session *php_tokyo_session_init() 
 {	
 	php_tokyo_tyrant_session *session = emalloc(sizeof(php_tokyo_tyrant_session));
@@ -35,7 +31,7 @@ php_tokyo_tyrant_session *php_tokyo_session_init()
 	session->host       = NULL;
 	session->port       = NULL;
 	session->timeout    = NULL;
-	session->item_count = 0;
+	session->server_count = 0;
 	
 	session->pk         = NULL;
 	session->pk_len     = -1;
@@ -53,9 +49,9 @@ php_tokyo_tyrant_session *php_tokyo_session_init()
 
 void php_tokyo_session_deinit(php_tokyo_tyrant_session *session) 
 {
-	if (session->item_count > 0) {
+	if (session->server_count > 0) {
 		size_t i;
-		for (i = 0; i < session->item_count; i++) {
+		for (i = 0; i < session->server_count; i++) {
 			efree(session->host[i]);
 		}
 		efree(session->port);
@@ -80,7 +76,7 @@ void php_tokyo_session_deinit(php_tokyo_tyrant_session *session)
 int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int idx) 
 {
 	/* Node does not exist */
-	if (idx > session->item_count) 
+	if (idx > session->server_count || idx < 0) 
 		return -1;
 	
 	if (!php_tokyo_tyrant_connect_ex(session->obj_conn, session->host[idx], session->port[idx], TOKYO_G(default_timeout), 0, 1)) {
@@ -91,7 +87,7 @@ int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int i
 
 int php_tokyo_tyrant_session_connect(php_tokyo_tyrant_session *session, char *key) 
 {
-	int idx = php_tokyo_map_func(session, key);
+	int idx = php_tokyo_hash_func(session, key);
 	
 	/* Mapping fails */
 	if (idx == -1)
@@ -119,12 +115,12 @@ char *php_tokyo_tyrant_generate_pk(php_tokyo_tyrant_session *session, int *pk_le
 
 void php_tokyo_session_append(php_tokyo_tyrant_session *session, php_url *url) 
 {
-	int pos = session->item_count;
-	session->item_count += 1;
+	int pos = session->server_count;
+	session->server_count += 1;
 	
-	session->host    = erealloc(session->host,    sizeof(char *) * session->item_count);
-	session->port    = erealloc(session->port,    sizeof(int)    * session->item_count);
-	session->timeout = erealloc(session->timeout, sizeof(double) * session->item_count);
+	session->host    = erealloc(session->host,    sizeof(char *) * session->server_count);
+	session->port    = erealloc(session->port,    sizeof(int)    * session->server_count);
+	session->timeout = erealloc(session->timeout, sizeof(double) * session->server_count);
 	
 	session->host[pos]    = estrdup(url->host);
 	session->port[pos]    = url->port;
@@ -133,7 +129,6 @@ void php_tokyo_session_append(php_tokyo_tyrant_session *session, php_url *url)
 
 zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_rand, char *rand_part, char *pk, int pk_len)
 {
-	TCMAP *cols;
 	char *data;
 	int data_len;
 
@@ -205,7 +200,6 @@ char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const
 {
 	int rsiz;
 	const char *rbuf;
-	TCMAP *cols;
 	RDBQRY *qry;
 	TCLIST *res;
 	char *buffer = NULL;
@@ -262,28 +256,11 @@ zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk,
 	if (tcrdbtblout(session->obj_conn->conn->rdb, pk, pk_len)) {
 		return 1;
 	} else {
-		return 0;
+		if (tcrdbecode(session->obj_conn->conn->rdb) == TTENOREC) {
+			return 1;
+		}
 	}
-}
-
-int php_tokyo_tyrant_map_key(php_tokyo_tyrant_session *session, char *key)
-{
-	unsigned int hash = 5381;
-	const char *s;
-	
-	if (session->item_count == 0) {
-		return -1;
-	}
-
-	if (key == NULL) 
-		return 0;
-
-	for (s = key; *s; s++) {
-		hash = ((hash << 5) + hash) + *s;
-	}
-	
-	hash &= 0x7FFFFFFF;	
-	return hash % session->item_count;
+	return 0;
 }
 
 char *php_tokyo_tyrant_create_checksum(char *rand_part, int idx, char *pk, char *salt) 
@@ -299,7 +276,7 @@ char *php_tokyo_tyrant_create_checksum(char *rand_part, int idx, char *pk, char 
 	
 	/* sha1 hash the pk_src and compare to session_hash */
 	PHP_SHA1Init(&context);
-	PHP_SHA1Update(&context, pk_src, pk_src_len);
+	PHP_SHA1Update(&context, (unsigned char *)pk_src, pk_src_len);
     PHP_SHA1Final(digest, &context);
 	
 	memset(sha1_str, '\0', 41);

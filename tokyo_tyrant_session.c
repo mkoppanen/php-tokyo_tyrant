@@ -22,10 +22,13 @@
 #include "php_tokyo_tyrant_funcs.h"
 #include "php_tokyo_tyrant_session_funcs.h"
 
+#define TT_SESS_DATA php_tokyo_tyrant_session *session = PS_GET_MOD_DATA();
+
 ps_module ps_mod_tokyo_tyrant = {
 	PS_MOD_SID(tokyo_tyrant)
 };
 
+/* Append all servers */
 static zend_bool _php_tt_handle_save_path(php_tokyo_tyrant_session *session, const char *save_path) 
 {	
 	php_url *url = NULL;
@@ -57,10 +60,15 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 
 	/* Create temporary session */
 	php_tokyo_tyrant_session *session;
-
+	
+	if (!TOKYO_G(salt)) {
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "tokyo_tyrant.session_salt needs to be set in order to use the session handler");
+	}
+	
 	/* Session id is being regenerated. Need to copy some data */
 	if (PS(session_status) == php_session_active) {
 		php_tokyo_tyrant_session *old_data = PS_GET_MOD_DATA();
+		
 		idx           = old_data->idx;
 		pk            = estrdup(old_data->pk);
 		old_rand_part = estrdup(old_data->rand_part);
@@ -75,10 +83,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	/* parse save path */
 	if (!_php_tt_handle_save_path(session, PS(save_path))) {
 		efree(pk);
-		pk = NULL;
-		
 		efree(old_rand_part);
-		old_rand_part = NULL;
 		php_tokyo_session_deinit(session);
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
@@ -92,23 +97,16 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	} else {
 		if (php_tokyo_tyrant_session_connect_ex(session, idx) == -1) {
 			efree(pk);
-			pk = NULL;
 			efree(old_rand_part);
-			old_rand_part = NULL;
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 		}
 
 		if (!php_tokyo_session_touch(session, old_rand_part, rand_part, pk, strlen(pk))) {
-			efree(pk);
-			pk = NULL;
-			efree(old_rand_part);
-			old_rand_part = NULL;
 			php_tokyo_session_deinit(session);
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to refresh the session data. Session might be in inconsistent state");
 		}
-		if (old_rand_part)
-			efree(old_rand_part);
+		efree(old_rand_part);
 	}
 
 	/* Checksum rand_part, salt, pk and idx */
@@ -137,26 +135,29 @@ PS_OPEN_FUNC(tokyo_tyrant)
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
 	PS_SET_MOD_DATA(session);
+	return SUCCESS;
 }
 
 PS_READ_FUNC(tokyo_tyrant)
 {
 	TT_SESS_DATA;
-	char *rand_part, *checksum, *pk_str, *buff;
+	char *buff;
+	int cmp;
 	
-	if (!php_tokyo_tyrant_tokenize_session(key, &(session->rand_part), &(session->checksum), &(session->idx), &(session->pk))) {
+	if (!php_tokyo_tyrant_tokenize_session((char *)key, &(session->rand_part), &(session->checksum), &(session->idx), &(session->pk))) {
 		/* Failure in parsing.. */
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}
 	session->pk_len = strlen(session->pk);
-
+	
 	buff = php_tokyo_tyrant_create_checksum(session->rand_part, session->idx, session->pk, TOKYO_G(salt));
+	cmp = strcmp(session->checksum, buff);
+	
+	efree(buff);
 
-	if (strcmp(session->checksum, buff) != 0) {
-		efree(buff);
+	if (cmp != 0) {		
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Session verification failed. Possibly tampered session");
 	}
-	efree(buff);
 
 	/* Use session->idx to connect, not rand_part based hashing */
 	if (php_tokyo_tyrant_session_connect_ex(session, session->idx) == -1) {
@@ -177,8 +178,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	char *rand_part, *checksum, *pk;
 	int idx, retcode;
 
-	if (!php_tokyo_tyrant_tokenize_session(key, &rand_part, &checksum, &idx, &pk)) {
-		/* Failure in parsing */
+	if (!php_tokyo_tyrant_tokenize_session((char *)key, &rand_part, &checksum, &idx, &pk)) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}	
 	
@@ -199,7 +199,7 @@ PS_DESTROY_FUNC(tokyo_tyrant)
 {
 	TT_SESS_DATA;
 	
-	if (php_tokyo_session_destroy(session, session->pk, session->pk_len) != 0) {
+	if (!php_tokyo_session_destroy(session, session->pk, session->pk_len)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to destroy the session");
 		return FAILURE;
 	}

@@ -22,6 +22,8 @@
 #include "php_tokyo_tyrant_session.h"
 #include "php_tokyo_tyrant_session_funcs.h"
 
+#include "php_tokyo_tyrant_hash.h"
+
 #include "SAPI.h" 
 #include "php_variables.h"
 #include "ext/standard/info.h"
@@ -1484,7 +1486,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 #undef TOKYO_REGISTER_CONST_LONG
 
 	php_session_register_module(ps_tokyo_tyrant_ptr);
-	php_tokyo_map_func = php_tokyo_tyrant_map_key;
+	php_tokyo_hash_func = php_tokyo_tyrant_simple_hash;
 	return SUCCESS;
 }
 

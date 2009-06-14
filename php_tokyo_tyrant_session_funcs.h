@@ -33,6 +33,20 @@ zend_bool php_tokyo_session_delete_where(php_tokyo_tyrant_session *session, char
 
 zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk, int pk_len);
 
-int php_tokyo_tyrant_map_key(php_tokyo_tyrant_session *session, char *key);
+char *php_tokyo_tyrant_generate_pk(php_tokyo_tyrant_session *session, int *pk_len);
+
+char *php_tokyo_tyrant_create_sid(char *rand_part, int idx, char *pk, char *salt);
+
+zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand, char **checksum, int *idx, char **pk_str);
+
+char *php_tokyo_tyrant_create_checksum(char *rand_part, int idx, char *pk, char *salt);
+
+char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *, const char *pk, int pk_len, int *data_len);
+
+int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int idx);
+
+int php_tokyo_tyrant_session_connect(php_tokyo_tyrant_session *session, char *key);
+
+zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_rand, char *rand_part, char *pk, int pk_len);
 
 #endif
