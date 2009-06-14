@@ -39,7 +39,7 @@ php_tokyo_tyrant_session *php_tokyo_session_init()
 	session->rand_part  = NULL;
 	session->checksum   = NULL;
 	
-	session->regenerated = 0;
+	session->force_regen = 0;
 	
 	session->obj_conn   = emalloc(sizeof(php_tokyo_tyrant_object));
 	php_tokyo_tyrant_init_tt_object(session->obj_conn TSRMLS_CC);
@@ -76,8 +76,9 @@ void php_tokyo_session_deinit(php_tokyo_tyrant_session *session)
 int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int idx) 
 {
 	/* Node does not exist */
-	if (idx > session->server_count || idx < 0) 
+	if (idx > session->server_count || idx < 0) {
 		return -1;
+	}
 	
 	if (!php_tokyo_tyrant_connect_ex(session->obj_conn, session->host[idx], session->port[idx], TOKYO_G(default_timeout), 0, 1)) {
 		return -1;
@@ -90,8 +91,9 @@ int php_tokyo_tyrant_session_connect(php_tokyo_tyrant_session *session, char *ke
 	int idx = php_tokyo_hash_func(session, key);
 	
 	/* Mapping fails */
-	if (idx == -1)
+	if (idx == -1) {
 		return -1;
+	}
 	
 	/* Node does not exist */
 	return php_tokyo_tyrant_session_connect_ex(session, idx);
@@ -131,8 +133,9 @@ zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_r
 {
 	char *data;
 	int data_len;
+	zend_bool mismatch;
 
-	data = php_tokyo_tyrant_session_retrieve_ex(session, old_rand, pk, pk_len, &data_len);
+	data = php_tokyo_tyrant_session_retrieve_ex(session, old_rand, pk, pk_len, &data_len, &mismatch);
 
 	if (!data) {
 		return 1;
@@ -172,22 +175,25 @@ zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_
 	return 1;
 }
 
-char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *rand_part, const char *pk, int pk_len, int *data_len)
+char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *rand_part, const char *pk, int pk_len, int *data_len, zend_bool *mismatch)
 {
 	TCMAP *cols;
 	char *buffer = NULL;
+
 	*data_len = 0;
+	*mismatch = 0;
 
 	cols = tcrdbtblget(session->obj_conn->conn->rdb, pk, pk_len);
 	
 	if (cols) {
 		const char *checksum = tcmapget2(cols, "hash");
 
-		/* Make sure that session id in the db matches the one we want
-		 	Protects against scenarios where new nodes are added in the middle of the pack.*/
+		/* Make sure that we get back the expected session */
 		if (strcmp(checksum, rand_part) == 0) {
 			buffer = estrdup(tcmapget2(cols, "data"));
 			*data_len = strlen(buffer);
+		} else {
+			*mismatch = 1;
 		}
 		tcmapdel(cols);
 	}
@@ -201,6 +207,7 @@ char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const
 	RDBQRY *qry;
 	TCLIST *res;
 	char *buffer = NULL;
+	zend_bool mismatch;
 	
 	*data_len = 0;
 	qry = tcrdbqrynew(session->obj_conn->conn->rdb);
@@ -212,7 +219,7 @@ char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const
 	rbuf = tclistval(res, 0, &rsiz);
 
 	if (tclistnum(res) > 0) {
-		buffer = php_tokyo_tyrant_session_retrieve_ex(session, session->rand_part, rbuf, rsiz, data_len);
+		buffer = php_tokyo_tyrant_session_retrieve_ex(session, session->rand_part, rbuf, rsiz, data_len, &mismatch);
 	}
 	
 	tclistdel(res);

@@ -41,7 +41,7 @@ zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand
 
 char *php_tokyo_tyrant_create_checksum(char *rand_part, int idx, char *pk, char *salt);
 
-char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *, const char *pk, int pk_len, int *data_len);
+char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *, const char *pk, int pk_len, int *data_len, zend_bool *mismatch);
 
 int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int idx);
 

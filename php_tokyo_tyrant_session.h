@@ -34,7 +34,7 @@ typedef struct _php_tokyo_tyrant_session {
 	char *checksum;
 	
 	int idx;
-	zend_bool regenerated;
+	zend_bool force_regen;
 	
 } php_tokyo_tyrant_session;
 

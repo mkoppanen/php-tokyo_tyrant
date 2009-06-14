@@ -64,14 +64,17 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	if (!TOKYO_G(salt)) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "tokyo_tyrant.session_salt needs to be set in order to use the session handler");
 	}
-	
+
 	/* Session id is being regenerated. Need to copy some data */
 	if (PS(session_status) == php_session_active) {
 		php_tokyo_tyrant_session *old_data = PS_GET_MOD_DATA();
-		
-		idx           = old_data->idx;
-		pk            = estrdup(old_data->pk);
-		old_rand_part = estrdup(old_data->rand_part);
+
+		/* Do not use old values if regeneration is forced */
+		if (old_data->force_regen == 0) {
+			idx           = old_data->idx;
+			pk            = estrdup(old_data->pk);
+			old_rand_part = estrdup(old_data->rand_part);
+		}
 	}
 	
 	session = php_tokyo_session_init();
@@ -143,6 +146,7 @@ PS_READ_FUNC(tokyo_tyrant)
 	TT_SESS_DATA;
 	char *buff;
 	int cmp;
+	zend_bool mismatch;
 	
 	if (!php_tokyo_tyrant_tokenize_session((char *)key, &(session->rand_part), &(session->checksum), &(session->idx), &(session->pk))) {
 		/* Failure in parsing.. */
@@ -152,7 +156,6 @@ PS_READ_FUNC(tokyo_tyrant)
 	
 	buff = php_tokyo_tyrant_create_checksum(session->rand_part, session->idx, session->pk, TOKYO_G(salt));
 	cmp = strcmp(session->checksum, buff);
-	
 	efree(buff);
 
 	if (cmp != 0) {		
@@ -164,9 +167,25 @@ PS_READ_FUNC(tokyo_tyrant)
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 	}
 
-	*val = php_tokyo_tyrant_session_retrieve_ex(session, session->rand_part, session->pk, session->pk_len, vallen);
+	*val = php_tokyo_tyrant_session_retrieve_ex(session, session->rand_part, session->pk, session->pk_len, vallen, &mismatch);
 
 	if (*val == NULL) {
+		/* Session got mapped to wrong server */
+		if (mismatch) {
+			zval *fname, retval;
+		
+			/* Force regeneration of id and force session to be active */
+			session->force_regen = 1;
+			PS(session_status)   = php_session_active;
+
+			MAKE_STD_ZVAL(fname);
+			ZVAL_STRING(fname, "session_regenerate_id", 1);
+			
+			call_user_function(EG(function_table), NULL, fname, &retval, 0, NULL TSRMLS_CC);
+			session->force_regen = 0;
+			zval_dtor(fname);
+		    FREE_ZVAL(fname);
+		}
 		*val = estrdup("");
 	}
 	return SUCCESS;
@@ -198,8 +217,15 @@ PS_WRITE_FUNC(tokyo_tyrant)
 PS_DESTROY_FUNC(tokyo_tyrant)
 {
 	TT_SESS_DATA;
+	zend_bool res;
 	
-	if (!php_tokyo_session_destroy(session, session->pk, session->pk_len)) {
+	res = php_tokyo_session_destroy(session, session->pk, session->pk_len);
+	php_tokyo_session_deinit(session);
+	session = NULL;
+	
+	PS_SET_MOD_DATA(NULL);
+	
+	if (!res) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to destroy the session");
 		return FAILURE;
 	}
