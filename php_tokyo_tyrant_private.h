@@ -24,6 +24,9 @@
 #include <stdint.h>
 
 #include "php_ini.h"
+#include "ext/standard/url.h"
+#include "SAPI.h" 
+#include "php_variables.h"
 
 typedef struct _php_tokyo_tyrant_conn {
 
@@ -63,6 +66,7 @@ typedef struct _php_tokyo_tyrant_query_object  {
 ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	HashTable *connections;
 	double default_timeout;
+	char *salt;
 ZEND_END_MODULE_GLOBALS(tokyo_tyrant)
 
 ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)
@@ -131,5 +135,13 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Not connected to a database"); \
 }
 /* }}} */
+
+#define DEBUG_M(args...) \
+{ \
+	char *buf; \
+	spprintf(&buf, 1024, args); \
+	php_log_err(buf); \
+	efree(buf); \
+} \
 
 #endif /* _PHP_TOKYO_TYRANT_PRIVATE_H_ */

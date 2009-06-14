@@ -19,9 +19,10 @@
 #include "php_tokyo_tyrant.h"
 #include "php_tokyo_tyrant_private.h"
 #include "php_tokyo_tyrant_funcs.h"
+#include "php_tokyo_tyrant_session.h"
+#include "php_tokyo_tyrant_session_funcs.h"
 
 #include "SAPI.h" 
-#include "ext/standard/url.h"
 #include "php_variables.h"
 #include "ext/standard/info.h"
 #include "Zend/zend_exceptions.h"
@@ -39,28 +40,6 @@ static zend_object_handlers tokyo_tyrant_table_object_handlers;
 static zend_object_handlers tokyo_tyrant_query_object_handlers;
 
 ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
-
-/* {{{ static int _get_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC) */
-static int _php_tt_get_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC)
-{
-	int code = 0;
-
-	if (url->query != NULL) { 
-		zval *params; 
-
-		MAKE_STD_ZVAL(params); 
-		array_init(params); 
-		
-		sapi_module.treat_data(PARSE_STRING, estrdup(url->query), params TSRMLS_CC);
-		code = php_tokyo_tyrant_connect(intern, url->host, url->port, params TSRMLS_CC);
-
-		zval_ptr_dtor(&params);
-	} else {
-		code = php_tokyo_tyrant_connect(intern, url->host, url->port, NULL TSRMLS_CC);
-	}
-	return code;
-}
-/* }}} */
 
 /* {{{ TokyoTyrant TokyoTyrant::__construct([string host, int port, array params]);
 	The constructor
@@ -135,7 +114,7 @@ PHP_METHOD(tokyotyrant, connecturi)
 	
 	intern = PHP_TOKYO_OBJECT;
 
-	if (!_php_tt_get_connection_from_uri(intern, url TSRMLS_CC)) {
+	if (!php_tokyo_tyrant_connection_from_uri(intern, url TSRMLS_CC)) {
 		php_url_free(url);
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
@@ -177,7 +156,6 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRM
 			code = 1;
 		}
 	}
-	
 	return code;
 }
 /* }}} */
@@ -257,23 +235,20 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), NULL TSRMLS_CC)) {
-				char *message = NULL;
-				spprintf(&message, 56 + Z_STRLEN_P(key), "Unable to remove the record '%s': %%s", Z_STRVAL_P(key));
-				
-				PHP_TOKYO_TYRANT_EXCEPTION_FREE(intern, message);
+				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to remove the record '%s': %s", 
+										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+				return;
 			}
 		} else {
 			if (!value) {
 				PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to store the record: no value provided");
 			}
-			
 			convert_to_string(value);
 			
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
-				char *message = NULL;
-				spprintf(&message, 56 + Z_STRLEN_P(key), "Unable to store the record '%s': %%s", Z_STRVAL_P(key));
-
-				PHP_TOKYO_TYRANT_EXCEPTION_FREE(intern, message);
+				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to store the record '%s': %s", 
+										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+				return;
 			}
 		}
 	}
@@ -677,6 +652,7 @@ PHP_METHOD(tokyotyrant, setmaster)
 
 /* {{{ TokyoTyrantQuery TokyoTyrantTable::getquery();
 	Get query object
+	@throws TokyoTyrantException if not connected to a database
 */
 PHP_METHOD(tokyotyranttable, getquery) 
 {
@@ -697,6 +673,29 @@ PHP_METHOD(tokyotyranttable, getquery)
 }
 /* }}} */
 
+/* {{{ TokyoTyrantQuery TokyoTyrantTable::genUid();
+	Generate unique PK
+	@throws TokyoTyrantException if not connected to a database
+	@throws TokyoTyrantException if uid generation fails
+*/
+PHP_METHOD(tokyotyranttable, genuid) 
+{
+	php_tokyo_tyrant_object *intern;
+	long pk = -1;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	pk = (long)tcrdbtblgenuid(intern->conn->rdb);
+	
+	if (pk == -1) {
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
+	}
+	RETURN_LONG(pk);
+}
+/* }}} */
 
 static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 {
@@ -1249,17 +1248,17 @@ ZEND_END_ARG_INFO()
 
 static function_entry php_tokyo_tyrant_table_class_methods[] =
 {
-	/* Inherit and override. TODO: arginfos */
-	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, setindex,	tokyo_tyrant_table_setindex_args,			ZEND_ACC_PUBLIC)
+	/* Inherit and override */
+	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putkeep,	tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, setindex,	tokyo_tyrant_table_setindex_args,	ZEND_ACC_PUBLIC)
 	/* Table API */
-	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	
+	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, genuid,		tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
@@ -1283,14 +1282,14 @@ static function_entry php_tokyo_tyrant_query_class_methods[] =
 	PHP_ME(tokyotyrantquery, __construct,	tokyo_tyrant_query_construct_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, addcond,		tokyo_tyrant_query_addcond_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, setlimit,		tokyo_tyrant_query_setlimit_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	
-	PHP_ME(tokyotyrantquery, key,			tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, next,			tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, rewind,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, current,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyrantquery, valid,			tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, key,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, next,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, rewind,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, current,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, valid,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL} 
 };
 
@@ -1307,7 +1306,7 @@ static void php_tokyo_tyrant_query_object_free_storage(void *object TSRMLS_DC)
 	}
 	
 	intern->parent->refcount--; 
-	if (intern->parent->refcount == 0) { /* not sure if this is right */
+	if (intern->parent->refcount == 0) { /* TODO: check if this leaks */
 		efree(intern->parent);
 	}
 	
@@ -1401,12 +1400,14 @@ static zend_object_value php_tokyo_tyrant_clone_object(zval *this_ptr TSRMLS_DC)
 
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "2.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.session_salt", "", PHP_INI_ALL, OnUpdateString, salt, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 PHP_INI_END()
 
 static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyrant_globals)
 {
 	tokyo_tyrant_globals->connections = NULL;
-	tokyo_tyrant_globals->default_timeout = 0.5;
+	tokyo_tyrant_globals->default_timeout = 2.0;
+	tokyo_tyrant_globals->salt = NULL;
 }
 
 PHP_MINIT_FUNCTION(tokyo_tyrant)
@@ -1481,6 +1482,9 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDB_RECDOUBLE", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
 	
 #undef TOKYO_REGISTER_CONST_LONG
+
+	php_session_register_module(ps_tokyo_tyrant_ptr);
+	php_tokyo_map_func = php_tokyo_tyrant_map_key;
 	return SUCCESS;
 }
 

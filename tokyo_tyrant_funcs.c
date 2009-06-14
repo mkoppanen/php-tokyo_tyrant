@@ -16,7 +16,12 @@
   +----------------------------------------------------------------------+
 */
 
+#include "php_tokyo_tyrant.h"
+#include "php_tokyo_tyrant_private.h"
 #include "php_tokyo_tyrant_funcs.h"
+
+#include "SAPI.h" 
+#include "php_variables.h"
 
 /* {{{ void php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC) */
 void php_tokyo_tyrant_init_tt_object(php_tokyo_tyrant_object *intern TSRMLS_DC)
@@ -36,24 +41,24 @@ zend_bool php_tokyo_tyrant_is_connected(php_tokyo_tyrant_object *intern TSRMLS_D
 }
 /* }}} */
 
-/* {{{ void php_tokyo_tyrant_hash_void_dtor(php_tokyo_tyrant_conn **conn TSRMLS_DC) */
-void php_tokyo_tyrant_hash_void_dtor(php_tokyo_tyrant_conn **conn TSRMLS_DC)
+/* {{{ static void php_tokyo_tyrant_hash_void_dtor(php_tokyo_tyrant_conn **conn TSRMLS_DC) */
+static void php_tokyo_tyrant_hash_void_dtor(php_tokyo_tyrant_conn **conn TSRMLS_DC)
 {
 	/* For some reason this gets called too early, destroy manually in MSHUTDOWN */
 }
 /* }}} */
 
-/* {{{ char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC) */
-char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC)
+/* {{{ static char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC) */
+static char *php_tokyo_tyrant_phash_key(char *host, int port, int *key_len, double timeout TSRMLS_DC)
 {
-	char *buffer;
+	char *buffer = NULL;
 	*key_len = spprintf(&buffer, strlen(host) + 256, "%s|%d|%f", host, port, timeout);
 	return buffer;	
 }
 /* }}} */
 
-/* void php_tokyo_tyrant_allocate_conn_pool(TSRMLS_D) */
-void php_tokyo_tyrant_allocate_conn_pool(TSRMLS_D) 
+/* static void php_tokyo_tyrant_allocate_conn_pool(TSRMLS_D) */
+static void php_tokyo_tyrant_allocate_conn_pool(TSRMLS_D) 
 {
 	if (!TOKYO_G(connections)) {
 		TOKYO_G(connections) = malloc(sizeof(HashTable)); 
@@ -62,8 +67,29 @@ void php_tokyo_tyrant_allocate_conn_pool(TSRMLS_D)
 }
 /* }}} */
 
-/* {{{ php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double timeout, int options TSRMLS_DC) */
-php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double timeout, int options TSRMLS_DC)
+/* {{{ static int php_tokyo_tyrant_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC) */
+int php_tokyo_tyrant_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC)
+{
+	int code = 0;
+	if (url->query != NULL) { 
+		zval *params; 
+
+		MAKE_STD_ZVAL(params); 
+		array_init(params); 
+		
+		sapi_module.treat_data(PARSE_STRING, estrdup(url->query), params TSRMLS_CC);
+		code = php_tokyo_tyrant_connect(intern, url->host, url->port, params TSRMLS_CC);
+
+		zval_ptr_dtor(&params);
+	} else {
+		code = php_tokyo_tyrant_connect(intern, url->host, url->port, NULL TSRMLS_CC);
+	}
+	return code;
+}
+/* }}} */
+
+/* {{{ static php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double timeout TSRMLS_DC) */
+static php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double timeout TSRMLS_DC)
 {
 	php_tokyo_tyrant_conn **conn;
 	int pkey_len;
@@ -80,8 +106,8 @@ php_tokyo_tyrant_conn *php_tokyo_tyrant_load_pconn(char *host, int port, double 
 }
 /* }}} */
 
-/* {{{ zend_bool php_tokyo_tyrant_save_pconn(php_tokyo_tyrant_conn *conn TSRMLS_DC) */
-zend_bool php_tokyo_tyrant_save_pconn(php_tokyo_tyrant_conn *conn TSRMLS_DC)
+/* {{{ static zend_bool php_tokyo_tyrant_save_pconn(php_tokyo_tyrant_conn *conn TSRMLS_DC) */
+static zend_bool php_tokyo_tyrant_save_pconn(php_tokyo_tyrant_conn *conn TSRMLS_DC)
 {
 	int pkey_len;
 	char *pkey = php_tokyo_tyrant_phash_key(conn->host, conn->port, &pkey_len, conn->timeout TSRMLS_CC);
@@ -107,7 +133,7 @@ php_tokyo_tyrant_conn *php_tokyo_tyrant_conn_init(TSRMLS_D)
 	conn->persistent = 0;
 	conn->connected  = 0;
 	
-	conn->timeout    = 2.0;
+	conn->timeout    = TOKYO_G(default_timeout);
 	conn->options    = 0;
 	
 	return conn;
@@ -162,7 +188,7 @@ zend_bool php_tokyo_tyrant_connect_ex(php_tokyo_tyrant_object *intern, char *hos
 	}
 	
 	if (persistent) {
-		intern->conn = php_tokyo_tyrant_load_pconn(host, port, timeout, options TSRMLS_CC);
+		intern->conn = php_tokyo_tyrant_load_pconn(host, port, timeout TSRMLS_CC);
 	}
 	
 	if (!intern->conn) {
@@ -175,7 +201,7 @@ zend_bool php_tokyo_tyrant_connect_ex(php_tokyo_tyrant_object *intern, char *hos
 		if (!tcrdbopen(intern->conn->rdb, host, port)) {
 			return 0;
 		}
-
+		
 		/* TODO: the connection init should be all encapsulated.. hmm. conn_init ??? */
 		intern->conn->host       = strdup(host);
 		intern->conn->port       = port;

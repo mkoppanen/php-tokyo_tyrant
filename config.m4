@@ -27,7 +27,7 @@ if test "$PHP_TOKYO_TYRANT" != "no"; then
   PHP_ADD_LIBRARY_WITH_PATH(tokyotyrant, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
 
   PHP_SUBST(TOKYO_TYRANT_SHARED_LIBADD)
-  PHP_NEW_EXTENSION(tokyo_tyrant, tokyo_tyrant.c tokyo_tyrant_funcs.c, $ext_shared)
+  PHP_NEW_EXTENSION(tokyo_tyrant, tokyo_tyrant.c tokyo_tyrant_funcs.c tokyo_tyrant_session.c tokyo_tyrant_session_funcs.c, $ext_shared)
   AC_DEFINE(HAVE_PHP_TOKYO_TYRANT,1,[ ])
 fi
 

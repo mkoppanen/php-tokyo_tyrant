@@ -40,4 +40,6 @@ zend_bool php_tokyo_tyrant_is_connected(php_tokyo_tyrant_object *intern TSRMLS_D
 
 void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC);
 
+int php_tokyo_tyrant_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC);
+
 #endif
