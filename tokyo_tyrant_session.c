@@ -52,7 +52,7 @@ static zend_bool _php_tt_handle_save_path(php_tokyo_tyrant_session *session, con
 
 PS_CREATE_SID_FUNC(tokyo_tyrant)
 {
-	char *sid, *pk, *rand_part, *old_rand_part;
+	char *sid, *pk = NULL, *rand_part, *old_rand_part;
 	int idx = -1, pk_len;
 
 	/* Create temporary session */
@@ -74,6 +74,11 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 
 	/* parse save path */
 	if (!_php_tt_handle_save_path(session, PS(save_path))) {
+		efree(pk);
+		pk = NULL;
+		
+		efree(old_rand_part);
+		old_rand_part = NULL;
 		php_tokyo_session_deinit(session);
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
@@ -86,17 +91,24 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		pk = php_tokyo_tyrant_generate_pk(session, &pk_len);
 	} else {
 		if (php_tokyo_tyrant_session_connect_ex(session, idx) == -1) {
+			efree(pk);
+			pk = NULL;
 			efree(old_rand_part);
+			old_rand_part = NULL;
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 		}
 
 		if (!php_tokyo_session_touch(session, old_rand_part, rand_part, pk, strlen(pk))) {
+			efree(pk);
+			pk = NULL;
 			efree(old_rand_part);
+			old_rand_part = NULL;
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
 		}
-		efree(old_rand_part);
+		if (old_rand_part)
+			efree(old_rand_part);
 	}
 
 	/* Checksum rand_part, salt, pk and idx */
@@ -133,7 +145,7 @@ PS_READ_FUNC(tokyo_tyrant)
 	char *rand_part, *checksum, *pk_str, *buff;
 	
 	if (!php_tokyo_tyrant_tokenize_session(key, &(session->rand_part), &(session->checksum), &(session->idx), &(session->pk))) {
-		/* Failure in parsing */
+		/* Failure in parsing.. */
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}
 	session->pk_len = strlen(session->pk);
@@ -163,7 +175,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 {
 	TT_SESS_DATA;
 	char *rand_part, *checksum, *pk;
-	int idx;
+	int idx, retcode;
 
 	if (!php_tokyo_tyrant_tokenize_session(key, &rand_part, &checksum, &idx, &pk)) {
 		/* Failure in parsing */
@@ -188,7 +200,7 @@ PS_DESTROY_FUNC(tokyo_tyrant)
 {
 	TT_SESS_DATA;
 	
-	if (php_tokyo_session_destroy(session) != 0) {
+	if (php_tokyo_session_destroy(session, session->pk, session->pk_len) != 0) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to destroy the session");
 		return FAILURE;
 	}

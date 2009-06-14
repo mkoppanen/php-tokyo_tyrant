@@ -257,9 +257,9 @@ zend_bool php_tokyo_session_delete_where(php_tokyo_tyrant_session *session, char
 	return 0;
 }
 
-zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session) 
+zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk, int pk_len) 
 {
-	if (tcrdbtblout(session->obj_conn->conn->rdb, session->pk, session->pk_len)) {
+	if (tcrdbtblout(session->obj_conn->conn->rdb, pk, pk_len)) {
 		return 1;
 	} else {
 		return 0;
