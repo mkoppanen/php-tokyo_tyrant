@@ -299,28 +299,30 @@ zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand
 	int i, matches = 0, ptr_len;
 	char *ptr = NULL;
 	
-	if (strlen(orig_sess_id) >= 512) {
+	/* Should be a fairly sensible limitation */
+	if (strlen(orig_sess_id) >= 1024) {
 		return 0;
 	}
 		
 	ptr = estrdup(orig_sess_id);
 	ptr_len = strlen(ptr);
 	
+	/* Make it easy to sscanf */
 	for (i = 0; i < ptr_len; i++) {
 		if (ptr[i] == '-') {
 			ptr[i] = ' ';
 		}
 	}
 
-	*sess_rand = emalloc(512);
-	*checksum  = emalloc(512);
-	*pk_str    = emalloc(512);
+	*sess_rand = emalloc(64);
+	*checksum  = emalloc(41);
+	*pk_str    = emalloc(64);
 	
-	memset(*sess_rand, 0, 512);
-	memset(*checksum,  0, 512);
-	memset(*pk_str,    0, 512);
+	memset(*sess_rand, '\0', 64);
+	memset(*checksum,  '\0', 41);
+	memset(*pk_str,    '\0', 64);
 	
-	matches = sscanf(ptr, "%s %s %d %s", *sess_rand, *checksum, &(*idx), *pk_str);
+	matches = sscanf(ptr, "%64s %40s %d %64s", *sess_rand, *checksum, &(*idx), *pk_str);
 	efree(ptr);
 
 	if (matches == 4) {
