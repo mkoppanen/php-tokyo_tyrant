@@ -396,8 +396,3 @@ char *php_tokyo_tyrant_validate_pk(char *session_id, int session_id_len, char *s
 	efree(sha1_str);
 	return NULL;
 }
-
-
-
-
-

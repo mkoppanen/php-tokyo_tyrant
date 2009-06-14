@@ -31,7 +31,7 @@ char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const
 
 zend_bool php_tokyo_session_delete_where(php_tokyo_tyrant_session *session, char *key, char *value, int limit);
 
-zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session);
+zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk, int pk_len);
 
 int php_tokyo_tyrant_map_key(php_tokyo_tyrant_session *session, char *key);
 

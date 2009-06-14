@@ -181,18 +181,17 @@ PS_WRITE_FUNC(tokyo_tyrant)
 		/* Failure in parsing */
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}	
-
-	if (!php_tokyo_session_store(session, rand_part, pk, strlen(pk), val, vallen)) {	
-		efree(rand_part);
-		efree(checksum);
-		efree(pk);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
-		return FAILURE;
-	}	
 	
+	retcode = php_tokyo_session_store(session, rand_part, pk, strlen(pk), val, vallen);
 	efree(rand_part);
 	efree(checksum);
 	efree(pk);
+
+	if (!retcode) {	
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
+		return FAILURE;
+	}
+	
 	return SUCCESS;
 }
 
