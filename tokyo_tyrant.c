@@ -43,6 +43,24 @@ static zend_object_handlers tokyo_tyrant_query_object_handlers;
 
 ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
 
+static char *_php_tt_key(char *key, int key_len, int *new_len TSRMLS_DC)
+{
+	char *buffer;
+	int buffer_len;
+	
+	if (!TOKYO_G(key_prefix)) {
+		return estrdup(key);
+	}
+	
+	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len + 1;
+	
+	buffer = emalloc(buffer_len);
+	memset(buffer, '\0', buffer_len);
+	
+	*new_len = sprintf(buffer, "%s%s", TOKYO_G(key_prefix), key);
+	return buffer;
+}
+
 /* {{{ TokyoTyrant TokyoTyrant::__construct([string host, int port, array params]);
 	The constructor
 	@throws TokyoTyrantException if host is set and database connection fails

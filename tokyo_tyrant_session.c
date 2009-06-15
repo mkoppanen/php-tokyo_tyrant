@@ -69,7 +69,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	if (PS(session_status) == php_session_active) {
 		php_tokyo_tyrant_session *old_data = PS_GET_MOD_DATA();
 
-		/* Do not use old values if regeneration is forced */
+		/* Use old values unless regeneration is forced */
 		if (old_data->force_regen == 0) {
 			idx           = old_data->idx;
 			pk            = estrdup(old_data->pk);
@@ -77,6 +77,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		}
 	}
 	
+	/* TODO: Check if this session could be used as PS_MOD_DATA */
 	session = php_tokyo_session_init();
 
 	/* Session id format: [random]-[checksum]-[node_id]-[pk] 
@@ -122,7 +123,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	return sid;
 }
 
-/* {{{ PS_OPEN*/
+/* {{{ PS_OPEN */
 PS_OPEN_FUNC(tokyo_tyrant)
 {	
 	php_tokyo_tyrant_session *session = php_tokyo_session_init();
@@ -140,6 +141,7 @@ PS_OPEN_FUNC(tokyo_tyrant)
 	PS_SET_MOD_DATA(session);
 	return SUCCESS;
 }
+/* }}} */
 
 PS_READ_FUNC(tokyo_tyrant)
 {
@@ -173,6 +175,9 @@ PS_READ_FUNC(tokyo_tyrant)
 		/* Session got mapped to wrong server */
 		if (mismatch) {
 			zval *fname, retval;
+			
+			/* Inform that the failboat is sailing */
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Got mismatch on hash. Creating empty session");
 		
 			/* Force regeneration of id and force session to be active */
 			session->force_regen = 1;
@@ -186,6 +191,7 @@ PS_READ_FUNC(tokyo_tyrant)
 			zval_dtor(fname);
 		    FREE_ZVAL(fname);
 		}
+		/* Return empty data */
 		*val = estrdup("");
 	}
 	return SUCCESS;
@@ -206,7 +212,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	efree(checksum);
 	efree(pk);
 
-	if (!retcode) {	
+	if (!retcode) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
 		return FAILURE;
 	}
