@@ -29,6 +29,12 @@ ini_set("tokyo_tyrant.key_prefix", "my_prefix_");
 var_dump($tt->get("key"));
 $tt->out("key");
 var_dump($tt->get("key"));
+
+ini_set("tokyo_tyrant.key_prefix", null);
+$tt->put("key", "value");
+var_dump($tt->get("key"));
+$tt->out("key");
+var_dump($tt->get("key"));
 ?>
 --EXPECT--
 string(5) "value"
@@ -42,5 +48,7 @@ array(2) {
 }
 array(0) {
 }
+string(5) "value"
+NULL
 string(5) "value"
 NULL
