@@ -67,6 +67,8 @@ ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	HashTable *connections;
 	double default_timeout;
 	char *salt;
+	char *key_prefix;
+	int key_prefix_len;
 ZEND_END_MODULE_GLOBALS(tokyo_tyrant)
 
 ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)

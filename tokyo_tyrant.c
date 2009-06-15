@@ -1428,6 +1428,9 @@ static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyran
 	tokyo_tyrant_globals->connections = NULL;
 	tokyo_tyrant_globals->default_timeout = 2.0;
 	tokyo_tyrant_globals->salt = NULL;
+	
+	tokyo_tyrant_globals->key_prefix     = NULL;
+	tokyo_tyrant_globals->key_prefix_len = 0;
 }
 
 PHP_MINIT_FUNCTION(tokyo_tyrant)
