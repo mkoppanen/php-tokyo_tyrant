@@ -334,15 +334,18 @@ PHP_METHOD(tokyotyrant, get)
 		tcmapdel(map);
 	} else {
 		zval tmpcopy;
-		char *value;
+		char *value, *kbuf;
+		int new_len;
 		
 		tmpcopy = *key;
 		zval_copy_ctor(&tmpcopy);
 		INIT_PZVAL(&tmpcopy);
 		convert_to_string(&tmpcopy);
 	
-		value = tcrdbget2(intern->conn->rdb, Z_STRVAL(tmpcopy));
+		kbuf = php_tokyo_tyrant_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
+		value = tcrdbget2(intern->conn->rdb, kbuf);
 		zval_dtor(&tmpcopy);
+		efree(kbuf);
 		
 		if (!value) {
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
@@ -1415,10 +1418,20 @@ static zend_object_value php_tokyo_tyrant_clone_object(zval *this_ptr TSRMLS_DC)
 	return new_ov;
 }
 
+static PHP_INI_MH(OnUpdateKeyPrefix)
+{
+	if (new_value) {
+		TOKYO_G(key_prefix_len) = strlen(new_value);
+	} else {
+		TOKYO_G(key_prefix_len) = 0;
+	}
+	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
+}
+
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "2.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.session_salt", "", PHP_INI_ALL, OnUpdateString, salt, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
-	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateString, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateKeyPrefix, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 PHP_INI_END()
 
 static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyrant_globals)
