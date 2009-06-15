@@ -238,6 +238,25 @@ zend_bool php_tokyo_tyrant_disconnect(php_tokyo_tyrant_conn *conn TSRMLS_DC)
 }
 /* }}} */
 
+char *php_tokyo_tyrant_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
+{
+	char *buffer;
+	int buffer_len;
+	
+	if (!TOKYO_G(key_prefix)) {
+		return estrdup(key);
+	}
+	
+	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len + 1;
+	
+	buffer    = emalloc(buffer_len);
+	buffer[0] = '\0';
+	
+	*new_len = sprintf(buffer, "%s%s", TOKYO_G(key_prefix), key);
+	return buffer;
+}
+
+
 /* {{{ TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC) */
 TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC) 
 {
@@ -267,20 +286,22 @@ TCMAP *php_tokyo_tyrant_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS
 		if (value_as_key) {
 			tcmapput2(map, Z_STRVAL(tmpcopy), "");
 		} else {
-			char *arr_key;
+			char *arr_key, *kbuf;
 	        uint arr_key_len;
 	        ulong num_key;
-			int n;
+			int n, kbuf_len;
 			zend_bool allocated = 0;
 			
 			n = zend_hash_get_current_key_ex(Z_ARRVAL_P(array), &arr_key, &arr_key_len, &num_key, 0, &pos);
 
 			if (n == HASH_KEY_IS_LONG) {
-				spprintf(&arr_key, 78, "%ld", num_key);
+				arr_key_len = spprintf(&arr_key, 78, "%ld", num_key);
 				allocated = 1;
 			}
 			
-			tcmapput2(map, arr_key, Z_STRVAL(tmpcopy));
+			kbuf = php_tokyo_tyrant_prefix(arr_key, arr_key_len, &kbuf_len TSRMLS_CC);
+			tcmapput2(map, kbuf, Z_STRVAL(tmpcopy));
+			efree(kbuf);
 			
 			if (allocated) {
 				efree(arr_key);
@@ -301,7 +322,10 @@ void php_tokyo_tyrant_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 	
 	tcmapiterinit(map);
 	while ((name = tcmapiternext2(map)) != NULL) {
-		add_assoc_string(array, (char *)name, (char *)tcmapget2(map, name), 1); 
+		const char *kbuf = (char *)name;
+		kbuf += strlen(TOKYO_G(key_prefix));
+		
+		add_assoc_string(array, (char *)kbuf, (char *)tcmapget2(map, name), 1); 
     }
 }
 /* }}} */
@@ -344,7 +368,10 @@ void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container T
 			array_init(row);
 			
 			while ((name = tcmapiternext2(cols)) != NULL) {
-				add_assoc_string(row, (char *)name, (char *)tcmapget2(cols, name), 1); 
+				const char *kbuf = name;
+				kbuf += strlen(TOKYO_G(key_prefix));
+				
+				add_assoc_string(row, (char *)kbuf, (char *)tcmapget2(cols, name), 1); 
 			}
 			tcmapdel(cols);
 			add_assoc_zval(container, (char *)rbuf, row);

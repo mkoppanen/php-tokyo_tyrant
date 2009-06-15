@@ -43,24 +43,6 @@ static zend_object_handlers tokyo_tyrant_query_object_handlers;
 
 ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
 
-static char *_php_tt_key(char *key, int key_len, int *new_len TSRMLS_DC)
-{
-	char *buffer;
-	int buffer_len;
-	
-	if (!TOKYO_G(key_prefix)) {
-		return estrdup(key);
-	}
-	
-	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len + 1;
-	
-	buffer = emalloc(buffer_len);
-	memset(buffer, '\0', buffer_len);
-	
-	*new_len = sprintf(buffer, "%s%s", TOKYO_G(key_prefix), key);
-	return buffer;
-}
-
 /* {{{ TokyoTyrant TokyoTyrant::__construct([string host, int port, array params]);
 	The constructor
 	@throws TokyoTyrantException if host is set and database connection fails
@@ -144,31 +126,36 @@ PHP_METHOD(tokyotyrant, connecturi)
 /* }}} */
 
 /* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRMLS_DC) */
-static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRMLS_DC)
+static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value TSRMLS_DC)
 {
 	int code = 0;
+	int new_len;
+	
+	char *kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
+
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_OP_PUT:
-			code = tcrdbput2(rdb, key, value);
+			code = tcrdbput2(rdb, kbuf, value);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTKEEP:
-			code = tcrdbputkeep2(rdb, key, value);
+			code = tcrdbputkeep2(rdb, kbuf, value);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTCAT:
-			code = tcrdbputcat2(rdb, key, value);
+			code = tcrdbputcat2(rdb, kbuf, value);
 		break;
 
 		case PHP_TOKYO_TYRANT_OP_OUT:
-			code = tcrdbout2(rdb, key);
+			code = tcrdbout2(rdb, kbuf);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_TBLOUT:
-			code = tcrdbtblout(rdb, key, strlen(key));
+			code = tcrdbtblout(rdb, kbuf, new_len);
 		break;
 	}
+	efree(kbuf);
 	
 	/* TODO: maybe add strict flag but ignore non-existent keys for now */
 	if (!code) {
@@ -185,7 +172,7 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
 {
 	zval tmpcopy;
 	php_tokyo_tyrant_object *intern;
-	int type, *code;
+	int type, *code, key_len;
 	char *key, key_buf[256];
 
     if (num_args != 3) {
@@ -200,10 +187,11 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
 	
 	if (hash_key->nKeyLength == 0) {
 		key_buf[0] = '\0';
-		sprintf(key_buf, "%ld", hash_key->h);
-		key = key_buf;
+		key_len    = sprintf(key_buf, "%ld", hash_key->h);
+		key        = key_buf;
 	} else {
-		key = hash_key->arKey;
+		key     = hash_key->arKey;
+		key_len = hash_key->nKeyLength;
 	}
 
 	tmpcopy = **ppzval;
@@ -212,9 +200,9 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
 	convert_to_string(&tmpcopy);
 	
 	if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), NULL TSRMLS_CC);
+		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), NULL TSRMLS_CC);
 	} else {
-		*code = _php_tt_real_write(intern->conn->rdb, type, key, Z_STRVAL(tmpcopy) TSRMLS_CC);
+		*code = _php_tt_real_write(intern->conn->rdb, type, key, key_len, Z_STRVAL(tmpcopy) TSRMLS_CC);
 	}
 
 	zval_dtor(&tmpcopy);
@@ -254,7 +242,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		convert_to_string(key);
 		
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), NULL TSRMLS_CC)) {
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), NULL TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to remove the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
@@ -265,7 +253,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 			}
 			convert_to_string(value);
 			
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to store the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
@@ -373,8 +361,8 @@ PHP_METHOD(tokyotyrant, get)
 PHP_METHOD(tokyotyrant, add) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *key;
-	int key_len = 0, retint;
+	char *key, *kbuf;
+	int key_len = 0, new_len, retint;
 	long type = 0;
 	zval *value;
 	
@@ -385,6 +373,8 @@ PHP_METHOD(tokyotyrant, add)
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
 
 	if (type == 0) {
 		if (Z_TYPE_P(value) == IS_DOUBLE) {
@@ -397,25 +387,28 @@ PHP_METHOD(tokyotyrant, add)
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_INT:
-			retint = tcrdbaddint(intern->conn->rdb, key, key_len, Z_LVAL_P(value));
+			retint = tcrdbaddint(intern->conn->rdb, kbuf, new_len, Z_LVAL_P(value));
 			if (retint == INT_MIN) {
 				RETURN_NULL();
 			}
-			RETURN_LONG(retint);
+			RETVAL_LONG(retint);
 		break;
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_DOUBLE:
-			retdouble = tcrdbadddouble(intern->conn->rdb, key, key_len, Z_DVAL_P(value));
+			retdouble = tcrdbadddouble(intern->conn->rdb, kbuf, new_len, Z_DVAL_P(value));
 			if (isnan(retdouble)) {
 				RETURN_NULL();
 			}
-			RETURN_DOUBLE(retdouble);
+			RETVAL_DOUBLE(retdouble);
 		break;
 		
 		default:
+			efree(kbuf);
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unknown record type");
 		break;	
 	}
+	efree(kbuf);
+	return;
 }
 /* }}} */
 
@@ -506,15 +499,18 @@ PHP_METHOD(tokyotyrant, stat)
 PHP_METHOD(tokyotyrant, size)
 {
 	php_tokyo_tyrant_object *intern;
-	char *key;
-	int key_len;
+	char *key, *kbuf;
+	int key_len, new_len;
 	long rec_len;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
-	rec_len = tcrdbvsiz2(intern->conn->rdb, key);
+	
+	kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
+	rec_len = tcrdbvsiz2(intern->conn->rdb, kbuf);
+	efree(kbuf);
 	
 	if (rec_len == -1) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record size: %s");
@@ -542,8 +538,8 @@ PHP_METHOD(tokyotyrant, num)
 PHP_METHOD(tokyotyrant, fwmkeys)
 {
 	php_tokyo_tyrant_object *intern;
-	char *prefix;
-	int prefix_len;
+	char *prefix, *kbuf;
+	int prefix_len, new_len;
 	long max_recs;
 	TCLIST *res = NULL;
 	const char *rbuf;
@@ -560,7 +556,8 @@ PHP_METHOD(tokyotyrant, fwmkeys)
 	
 	for (i = 0; i < tclistnum(res); i++) {
 		rbuf = tclistval(res, i, &rsiz);
-		add_next_index_stringl(return_value, (char *)rbuf, rsiz, 1);
+		kbuf = php_tokyo_tyrant_prefix((char *)rbuf, rsiz, &new_len TSRMLS_CC);
+		add_next_index_stringl(return_value, kbuf, new_len, 0);
 	}
 	
 	tclistdel(res);

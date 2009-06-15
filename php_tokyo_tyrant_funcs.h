@@ -42,4 +42,6 @@ void php_tokyo_tyrant_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container T
 
 int php_tokyo_tyrant_connection_from_uri(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC);
 
+char *php_tokyo_tyrant_prefix(char *key, int key_len, int *new_len TSRMLS_DC);
+
 #endif
