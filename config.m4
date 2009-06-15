@@ -1,5 +1,8 @@
-PHP_ARG_WITH(tokyo-tyrant, whether to enable tokyo tyrant handler support,
-[  --with-tokyo-tyrant[=DIR]       Enable tokyo tyrant handler support], yes)
+PHP_ARG_WITH(tokyo-tyrant, whether to enable tokyo tyrant support,
+[  --with-tokyo-tyrant[=DIR]       Enable tokyo tyrant support], yes)
+
+PHP_ARG_ENABLE(tokyo-tyrant-session, whether to enable tokyo tyrant session handler support,
+[  --disable-tokyo-tyrant-session    Disables tokyo tyrant session handler support], yes, no)
 
 if test "$PHP_TOKYO_TYRANT" != "no"; then
 
@@ -25,9 +28,16 @@ if test "$PHP_TOKYO_TYRANT" != "no"; then
 
   PHP_ADD_LIBRARY_WITH_PATH(tokyocabinet, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
   PHP_ADD_LIBRARY_WITH_PATH(tokyotyrant, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
-
   PHP_SUBST(TOKYO_TYRANT_SHARED_LIBADD)
-  PHP_NEW_EXTENSION(tokyo_tyrant, tokyo_tyrant.c tokyo_tyrant_hash.c tokyo_tyrant_funcs.c tokyo_tyrant_session.c tokyo_tyrant_session_funcs.c, $ext_shared)
+
+  TOKYO_EXT_FILES="tokyo_tyrant.c tokyo_tyrant_hash.c tokyo_tyrant_funcs.c"
+
+  if test "$PHP_TOKYO_TYRANT_SESSION" != "no"; then
+    AC_DEFINE(HAVE_PHP_TOKYO_TYRANT_SESSION,1,[ ])
+    TOKYO_EXT_FILES="${TOKYO_EXT_FILES} tokyo_tyrant_session.c tokyo_tyrant_session_funcs.c"
+  fi
+ 
+  PHP_NEW_EXTENSION(tokyo_tyrant, $TOKYO_EXT_FILES, $ext_shared)
   AC_DEFINE(HAVE_PHP_TOKYO_TYRANT,1,[ ])
 fi
 

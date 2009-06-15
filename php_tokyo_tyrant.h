@@ -18,7 +18,7 @@
 #ifndef _PHP_TOKYO_TYRANT_H_
 # define _PHP_TOKYO_TYRANT_H_
 
-#define PHP_TOKYO_TYRANT_EXTVER "0.0.4-dev"
+#define PHP_TOKYO_TYRANT_EXTVER "0.0.5-dev"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -29,13 +29,17 @@
 #endif
 
 #include "php.h"
-#include "ext/session/php_session.h"
 
 extern zend_module_entry tokyo_tyrant_module_entry;
 #define phpext_tokyo_tyrant_ptr &tokyo_tyrant_module_entry
 
+#ifdef HAVE_PHP_TOKYO_TYRANT_SESSION
+#include "ext/session/php_session.h"
+
 extern ps_module ps_mod_tokyo_tyrant;
 #define ps_tokyo_tyrant_ptr &ps_mod_tokyo_tyrant
+
 PS_FUNCS(tokyo_tyrant);
+#endif
 
 #endif /* _PHP_TOKYO_TYRANT_H_ */

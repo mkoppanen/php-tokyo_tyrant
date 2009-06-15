@@ -252,5 +252,3 @@ PS_CLOSE_FUNC(tokyo_tyrant)
 	PS_SET_MOD_DATA(NULL);
 	return SUCCESS;
 }
-
-

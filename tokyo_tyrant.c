@@ -1517,8 +1517,10 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	
 #undef TOKYO_REGISTER_CONST_LONG
 
+#ifdef HAVE_PHP_TOKYO_TYRANT_SESSION
 	php_session_register_module(ps_tokyo_tyrant_ptr);
 	php_tokyo_hash_func = php_tokyo_tyrant_simple_hash;
+#endif
 	return SUCCESS;
 }
 

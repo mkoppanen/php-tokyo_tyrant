@@ -42,4 +42,3 @@ int (*php_tokyo_hash_func)(php_tokyo_tyrant_session *session, char *key);
 #endif
 
 
-

@@ -58,4 +58,3 @@ int php_tokyo_tyrant_simple_hash(php_tokyo_tyrant_session *session, char *key)
 
 
 
-
