@@ -47,6 +47,7 @@ static zend_bool _php_tt_handle_save_path(php_tokyo_tyrant_session *session, con
 		}
 		php_tokyo_session_append(session, url TSRMLS_CC);
 		php_url_free(url);
+		url = NULL;
 		pch = strtok(NULL, ",");
 	}
 	efree(ptr);
@@ -80,10 +81,6 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	/* TODO: Check if this session could be used as PS_MOD_DATA */
 	session = php_tokyo_session_init();
 
-	/* Session id format: [random]-[checksum]-[node_id]-[pk] 
-		checksum = random-nodeid-pk-salt */
-	rand_part = php_session_create_id(PS(mod_data), NULL TSRMLS_CC);
-
 	/* parse save path */
 	if (!_php_tt_handle_save_path(session, PS(save_path))) {
 		efree(pk);
@@ -91,17 +88,22 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		php_tokyo_session_deinit(session);
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
+	
+	/* Session id format: [random]-[checksum]-[node_id]-[pk] 
+		checksum = random-nodeid-pk-salt */
+	rand_part = php_session_create_id(PS(mod_data), NULL TSRMLS_CC);
 
 	/* If we have proper idx here it means we don't have to renegerate and copy data */
 	if (idx == -1) { 
 		idx = php_tokyo_tyrant_session_connect(session, rand_part);
-
+		
 		/* primary key for this session */
 		pk = php_tokyo_tyrant_generate_pk(session, &pk_len);
 	} else {
 		if (php_tokyo_tyrant_session_connect_ex(session, idx) == -1) {
 			efree(pk);
 			efree(old_rand_part);
+			efree(rand_part);
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 		}
@@ -112,6 +114,8 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		}
 		efree(old_rand_part);
 	}
+
+	
 
 	/* Checksum rand_part, salt, pk and idx */
 	sid = php_tokyo_tyrant_create_sid(rand_part, idx, pk, TOKYO_G(salt));
@@ -175,9 +179,9 @@ PS_READ_FUNC(tokyo_tyrant)
 		/* Session got mapped to wrong server */
 		if (mismatch) {
 			zval *fname, retval;
-			
+
 			/* Inform that the failboat is sailing */
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Got mismatch on hash. Creating empty session");
+			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Got mismatch on hash. Creating empty session");
 		
 			/* Force regeneration of id and force session to be active */
 			session->force_regen = 1;

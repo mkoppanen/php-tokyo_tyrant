@@ -162,8 +162,8 @@ zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_
 	/* store a record */
 	cols = tcmapnew();
 	
-	tcmapput2(cols, "hash", rand_part);
 	tcmapput2(cols, "data", data);
+	tcmapput2(cols, "hash", rand_part);
 	tcmapput2(cols, "ts",   timestamp);
 
 	if (!tcrdbtblput(session->obj_conn->conn->rdb, pk, pk_len, cols)) {

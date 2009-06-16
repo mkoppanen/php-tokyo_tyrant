@@ -1539,6 +1539,7 @@ PHP_MSHUTDOWN_FUNCTION(tokyo_tyrant)
 {
 	if (TOKYO_G(connections)) {
 		zend_hash_apply(TOKYO_G(connections), (apply_func_t)php_tokyo_tyrant_hash_dtor TSRMLS_CC);
+		zend_hash_destroy(TOKYO_G(connections));
 		free(TOKYO_G(connections));
 		TOKYO_G(connections) = NULL;
 	}
