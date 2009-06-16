@@ -1553,8 +1553,14 @@ PHP_MINFO_FUNCTION(tokyo_tyrant)
 	
 		php_info_print_table_header(2, "tokyo_tyrant extension", "enabled");
 		php_info_print_table_row(2, "tokyo_tyrant extension version", PHP_TOKYO_TYRANT_EXTVER);
-	
+#ifdef HAVE_PHP_TOKYO_TYRANT_SESSION		
+		php_info_print_table_row(2, "tokyo_tyrant session handler", "available");
+#else
+		php_info_print_table_row(2, "tokyo_tyrant session handler", "unavailable");
+#endif
 	php_info_print_table_end();
+	
+	DISPLAY_INI_ENTRIES();
 }
 
 zend_module_entry tokyo_tyrant_module_entry =
