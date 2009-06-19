@@ -49,4 +49,6 @@ int php_tokyo_tyrant_session_connect(php_tokyo_tyrant_session *session, char *ke
 
 zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_rand, char *rand_part, char *pk, int pk_len);
 
+void php_tokyo_tyrant_force_session_regen(php_tokyo_tyrant_session *session TSRMLS_DC);
+
 #endif

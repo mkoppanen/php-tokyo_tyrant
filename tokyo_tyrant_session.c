@@ -56,7 +56,7 @@ static zend_bool _php_tt_handle_save_path(php_tokyo_tyrant_session *session, con
 
 PS_CREATE_SID_FUNC(tokyo_tyrant)
 {
-	char *sid, *pk = NULL, *rand_part, *old_rand_part;
+	char *sid, *pk = NULL, *rand_part, *current_rand;
 	int idx = -1, pk_len;
 
 	/* Create temporary session */
@@ -68,13 +68,13 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 
 	/* Session id is being regenerated. Need to copy some data */
 	if (PS(session_status) == php_session_active) {
-		php_tokyo_tyrant_session *old_data = PS_GET_MOD_DATA();
+		php_tokyo_tyrant_session *data = PS_GET_MOD_DATA();
 
 		/* Use old values unless regeneration is forced */
-		if (old_data->force_regen == 0) {
-			idx           = old_data->idx;
-			pk            = estrdup(old_data->pk);
-			old_rand_part = estrdup(old_data->rand_part);
+		if (data->force_regen == 0) {
+			idx          = data->idx;
+			pk           = estrdup(data->pk);
+			current_rand = estrdup(data->rand_part);
 		}
 	}
 	
@@ -84,7 +84,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	/* parse save path */
 	if (!_php_tt_handle_save_path(session, PS(save_path))) {
 		efree(pk);
-		efree(old_rand_part);
+		efree(current_rand);
 		php_tokyo_session_deinit(session);
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
@@ -102,27 +102,25 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	} else {
 		if (php_tokyo_tyrant_session_connect_ex(session, idx) == -1) {
 			efree(pk);
-			efree(old_rand_part);
+			efree(current_rand);
 			efree(rand_part);
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 		}
 
-		if (!php_tokyo_session_touch(session, old_rand_part, rand_part, pk, strlen(pk))) {
+		if (!php_tokyo_session_touch(session, current_rand, rand_part, pk, strlen(pk))) {
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to refresh the session data. Session might be in inconsistent state");
 		}
-		efree(old_rand_part);
+		efree(current_rand);
 	}
-
-	
 
 	/* Checksum rand_part, salt, pk and idx */
 	sid = php_tokyo_tyrant_create_sid(rand_part, idx, pk, TOKYO_G(salt));
 
 	efree(rand_part);
 	efree(pk);
-
+	
 	php_tokyo_session_deinit(session);
 	return sid;
 }
@@ -178,22 +176,7 @@ PS_READ_FUNC(tokyo_tyrant)
 	if (*val == NULL) {
 		/* Session got mapped to wrong server */
 		if (mismatch) {
-			zval *fname, retval;
-
-			/* Inform that the failboat is sailing */
-			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Got mismatch on hash. Creating empty session");
-		
-			/* Force regeneration of id and force session to be active */
-			session->force_regen = 1;
-			PS(session_status)   = php_session_active;
-
-			MAKE_STD_ZVAL(fname);
-			ZVAL_STRING(fname, "session_regenerate_id", 1);
-			
-			call_user_function(EG(function_table), NULL, fname, &retval, 0, NULL TSRMLS_CC);
-			session->force_regen = 0;
-			zval_dtor(fname);
-		    FREE_ZVAL(fname);
+			php_tokyo_tyrant_force_session_regen(session);
 		}
 		/* Return empty data */
 		*val = estrdup("");

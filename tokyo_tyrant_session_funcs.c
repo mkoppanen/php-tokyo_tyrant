@@ -170,7 +170,7 @@ zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char *rand_
 		tcmapdel(cols);
 		return 0;
 	}
-
+	tcrdbsync(session->obj_conn->conn->rdb);
 	tcmapdel(cols);
 	return 1;
 }
@@ -378,4 +378,21 @@ char *php_tokyo_tyrant_validate_pk(char *session_id, int session_id_len, char *s
 	efree(pk_str);
 	efree(sha1_str);
 	return NULL;
+}
+
+void php_tokyo_tyrant_force_session_regen(php_tokyo_tyrant_session *session TSRMLS_DC) 
+{
+	zval *fname, retval;
+
+	/* Force regeneration of id and force session to be active */
+	session->force_regen = 1;
+	PS(session_status)   = php_session_active;
+
+	MAKE_STD_ZVAL(fname);
+	ZVAL_STRING(fname, "session_regenerate_id", 1);
+
+	call_user_function(EG(function_table), NULL, fname, &retval, 0, NULL TSRMLS_CC);
+	session->force_regen = 0;
+	zval_dtor(fname);
+	FREE_ZVAL(fname);
 }
