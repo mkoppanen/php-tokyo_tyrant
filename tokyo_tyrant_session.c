@@ -89,7 +89,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse session.save_path");
 	}
 	
-	/* Session id format: [random]-[checksum]-[node_id]-[pk] 
+	/* Session id format: [rand_part]-[checksum]-[node_id]-[pk] 
 		checksum = random-nodeid-pk-salt */
 	rand_part = php_session_create_id(PS(mod_data), NULL TSRMLS_CC);
 
@@ -108,6 +108,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to connect to session server");
 		}
 
+		/* Refresh the session to use new rand */
 		if (!php_tokyo_session_touch(session, current_rand, rand_part, pk, strlen(pk))) {
 			php_tokyo_session_deinit(session);
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to refresh the session data. Session might be in inconsistent state");
