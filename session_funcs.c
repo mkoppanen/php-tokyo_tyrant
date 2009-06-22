@@ -117,6 +117,7 @@ char *php_tt_create_pk(php_tt_conn *conn, int *pk_len)
 	return pk_str;
 }
 
+/* TODO: optimize this whole function */
 zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, int *idx, char **pk_str) 
 {
 	int pos, i, matches = 0, ptr_len;
@@ -129,7 +130,7 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 		
 	ptr     = estrdup(session_id);
 	ptr_len = strlen(ptr);
-	
+
 	/* Make it easy to sscanf */
 	for (i = 0; i < ptr_len; i++) {
 		if (ptr[i] == '-') {
