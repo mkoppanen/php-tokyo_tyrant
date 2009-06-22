@@ -213,7 +213,6 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	}	
 	
 	if (!php_tt_save_sess_data(session->conn, session->sess_rand, session->pk, strlen(session->pk), val, vallen)) {
-
 		server = php_tt_pool_get_server(session->pool, session->idx TSRMLS_CC);
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		

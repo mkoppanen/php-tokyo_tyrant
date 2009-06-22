@@ -117,7 +117,6 @@ char *php_tt_create_pk(php_tt_conn *conn, int *pk_len)
 	return pk_str;
 }
 
-/* TODO: optimize this whole function */
 zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, int *idx, char **pk_str) 
 {
 	int i, matches = 0, ptr_len;
@@ -193,7 +192,6 @@ char *php_tt_get_sess_data(php_tt_conn *conn, char *sess_rand, const char *pk, i
 	
 	if (cols) {
 		const char *checksum = tcmapget2(cols, "hash");
-
 		/* Make sure that we get back the expected session */
 		if (strcmp(checksum, sess_rand) == 0) {
 			buffer = estrdup(tcmapget2(cols, "data"));
