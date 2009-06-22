@@ -1427,6 +1427,7 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "2.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.session_salt", "", PHP_INI_ALL, OnUpdateString, salt, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateKeyPrefix, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.fail_threshold", "5", PHP_INI_ALL, OnUpdateLong, fail_threshold, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 PHP_INI_END()
 
 static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyrant_globals)

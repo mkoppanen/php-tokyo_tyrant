@@ -18,18 +18,16 @@
 #ifndef _PHP_TOKYO_TYRANT_FAILOVER_H_
 # define _PHP_TOKYO_TYRANT_FAILOVER_H_
 
-/* TODO: configurable values */
-#define PHP_TT_COLOR_GREEN 1  /* 0 - 1 failures */
-#define PHP_TT_COLOR_AMBER 2  /* 2 - 4 failures */
-#define PHP_TT_COLOR_RED   3  /* 5+    failures */
-
 #define PHP_TT_INCR 1
 #define PHP_TT_DECR 2
 #define PHP_TT_GET  3
 
 long php_tt_server_fail(int op, char *host, int port TSRMLS_DC);
+
 void php_tt_server_fail_incr(char *host, int port TSRMLS_DC);
+
 void php_tt_server_fail_decr(char *host, int port TSRMLS_DC);
-int php_tt_server_color(char *host, int port TSRMLS_DC);
+
+zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC);
 
 #endif

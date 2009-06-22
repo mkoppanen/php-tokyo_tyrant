@@ -72,15 +72,13 @@ void php_tt_server_fail_decr(char *host, int port TSRMLS_DC)
 	php_tt_server_fail(PHP_TT_DECR, host, port TSRMLS_CC);
 }
 
-int php_tt_server_color(char *host, int port TSRMLS_DC)
+zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 {
 	long fail_count = php_tt_server_fail(PHP_TT_GET, host, port TSRMLS_CC);
 	
-	if (fail_count <= 1) {
-		return PHP_TT_COLOR_GREEN;
-	} else if (fail_count > 1 && fail_count < 5) {
-		return PHP_TT_COLOR_AMBER;
+	if (fail_count < TOKYO_G(fail_threshold)) {
+		return 1;
 	} else {
-		return PHP_TT_COLOR_RED;
+		return 0;
 	}
 }
