@@ -76,6 +76,11 @@ zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 {
 	long fail_count = php_tt_server_fail(PHP_TT_GET, host, port TSRMLS_CC);
 	
+	/* Server is always ok if failover is disabled */
+	if (!TOKYO_G(allow_failover)) {
+		return 1;
+	}
+	
 	if (fail_count < TOKYO_G(fail_threshold)) {
 		return 1;
 	} else {
