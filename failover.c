@@ -98,7 +98,7 @@ static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend
 {
 	char *key, host[4096];
 	double timeout;
-	int port, i;
+	int port;
 
 	if (hash_key->nKeyLength == 0 || hash_key->nKeyLength >= 4096) {
 		return ZEND_HASH_APPLY_REMOVE;
