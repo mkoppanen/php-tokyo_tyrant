@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 5 / Tokyo tyrant session handler                         |
+  | PHP Version 5 / Tokyo tyrant                                         |
   +----------------------------------------------------------------------+
   | Copyright (c) 2009 Mikko Koppanen                                    |
   +----------------------------------------------------------------------+
@@ -15,40 +15,29 @@
   | Authors: Mikko Koppanen <mkoppanen@php.net>                          |
   +----------------------------------------------------------------------+
 */
-
 #ifndef _PHP_TOKYO_TYRANT_SESSION_FUNCS_H_
 # define _PHP_TOKYO_TYRANT_SESSION_FUNCS_H_
 
-php_tokyo_tyrant_session *php_tokyo_session_init();
+php_tt_session *php_tt_session_init(TSRMLS_D);
 
-void php_tokyo_session_deinit(php_tokyo_tyrant_session *session);
+void php_tt_session_deinit(php_tt_session *session TSRMLS_DC);
 
-void php_tokyo_session_append(php_tokyo_tyrant_session *session, php_url *url);
+char *php_tt_checksum(char *sess_rand, int idx, char *pk, char *salt TSRMLS_DC);
 
-zend_bool php_tokyo_session_store(php_tokyo_tyrant_session *session, char*, char *, int, const char *data, int data_len);
+char *php_tt_create_sid(char *sess_rand, int idx, char *pk, char *salt TSRMLS_DC);
 
-char *php_tokyo_tyrant_session_retrieve(php_tokyo_tyrant_session *session, const char *session_id, int *data_len);
+char *php_tt_create_pk(php_tt_conn *conn, int *pk_len TSRMLS_DC);
 
-zend_bool php_tokyo_session_delete_where(php_tokyo_tyrant_session *session, char *key, char *value, int limit);
+zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, int *idx, char **pk_str TSRMLS_DC);
 
-zend_bool php_tokyo_session_destroy(php_tokyo_tyrant_session *session, char *pk, int pk_len);
+zend_bool php_tt_validate(char *sess_rand, char *checksum, int idx, char *pk, char *salt TSRMLS_DC);
 
-char *php_tokyo_tyrant_generate_pk(php_tokyo_tyrant_session *session, int *pk_len);
+char *php_tt_get_sess_data(php_tt_conn *conn, char *sess_rand, const char *pk, int pk_len, int *data_len, zend_bool *mismatch TSRMLS_DC);
 
-char *php_tokyo_tyrant_create_sid(char *rand_part, int idx, char *pk, char *salt);
+zend_bool php_tt_save_sess_data(php_tt_conn *conn, char *rand_part, char *pk, int pk_len, const char *data, int data_len TSRMLS_DC);
 
-zend_bool php_tokyo_tyrant_tokenize_session(char *orig_sess_id, char **sess_rand, char **checksum, int *idx, char **pk_str);
+zend_bool php_tt_sess_touch(php_tt_conn *conn, char *current_rand, char *sess_rand, char *pk, int pk_len TSRMLS_DC);
 
-char *php_tokyo_tyrant_create_checksum(char *rand_part, int idx, char *pk, char *salt);
-
-char *php_tokyo_tyrant_session_retrieve_ex(php_tokyo_tyrant_session *session, char *, const char *pk, int pk_len, int *data_len, zend_bool *mismatch);
-
-int php_tokyo_tyrant_session_connect_ex(php_tokyo_tyrant_session *session, int idx);
-
-int php_tokyo_tyrant_session_connect(php_tokyo_tyrant_session *session, char *key);
-
-zend_bool php_tokyo_session_touch(php_tokyo_tyrant_session *session, char *old_rand, char *rand_part, char *pk, int pk_len);
-
-void php_tokyo_tyrant_force_session_regen(php_tokyo_tyrant_session *session TSRMLS_DC);
+zend_bool php_tt_sess_destroy(php_tt_conn *conn, char *pk, int pk_len TSRMLS_DC);
 
 #endif

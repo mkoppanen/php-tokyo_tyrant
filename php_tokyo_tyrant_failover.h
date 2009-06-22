@@ -15,25 +15,21 @@
   | Authors: Mikko Koppanen <mkoppanen@php.net>                          |
   +----------------------------------------------------------------------+
 */
+#ifndef _PHP_TOKYO_TYRANT_FAILOVER_H_
+# define _PHP_TOKYO_TYRANT_FAILOVER_H_
 
-#ifndef _PHP_TOKYO_TYRANT_FUNCS_H_
-# define _PHP_TOKYO_TYRANT_FUNCS_H_
+/* TODO: configurable values */
+#define PHP_TT_COLOR_GREEN 1  /* 0 - 1 failures */
+#define PHP_TT_COLOR_AMBER 2  /* 2 - 4 failures */
+#define PHP_TT_COLOR_RED   3  /* 5+    failures */
 
-#include "php_tokyo_tyrant.h"
-#include "php_tokyo_tyrant_private.h"
+#define PHP_TT_INCR 1
+#define PHP_TT_DECR 2
+#define PHP_TT_GET  3
 
-void php_tt_object_init(php_tokyo_tyrant_object *intern TSRMLS_DC);
-
-zend_bool php_tt_is_connected(php_tokyo_tyrant_object *intern TSRMLS_DC);
-
-TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC);
-
-void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
-
-zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *parent TSRMLS_DC);
-
-void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC);
-
-char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC);
+long php_tt_server_fail(int op, char *host, int port TSRMLS_DC);
+void php_tt_server_fail_incr(char *host, int port TSRMLS_DC);
+void php_tt_server_fail_decr(char *host, int port TSRMLS_DC);
+int php_tt_server_color(char *host, int port TSRMLS_DC);
 
 #endif

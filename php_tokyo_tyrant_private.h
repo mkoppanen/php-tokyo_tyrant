@@ -28,32 +28,24 @@
 #include "SAPI.h" 
 #include "php_variables.h"
 
-typedef struct _php_tokyo_tyrant_conn {
-
+typedef struct _php_tt_conn {
 	TCRDB *rdb; /* database instance */
-	char *host; /* hostname */
-	int port;   /* port */
 
-	zend_bool connected; /* Are we connected to a db? */
-	zend_bool persistent;
-	
-	double timeout;
-	int options;
-	
-} php_tokyo_tyrant_conn;
-
+	zend_bool connected;   /* Are we connected to a db? */
+	zend_bool persistent;  /* Is the instant persistent (?) */
+} php_tt_conn;
 
 /* {{{ typedef struct _php_tokyo_tyrant_object */
 typedef struct _php_tokyo_tyrant_object  {
 	zend_object zo;
-	php_tokyo_tyrant_conn *conn; /* database connection */
+	php_tt_conn *conn; /* database connection */
 } php_tokyo_tyrant_object;
 /* }}} */
 
 /* {{{ typedef struct _php_tokyo_tyrant_query_object */
 typedef struct _php_tokyo_tyrant_query_object  {
 	zend_object zo;
-	php_tokyo_tyrant_conn *conn;
+	php_tt_conn *conn;
 	
 	RDBQRY *qry;
 	zval *parent;
@@ -65,13 +57,15 @@ typedef struct _php_tokyo_tyrant_query_object  {
 
 ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	HashTable *connections;
+	HashTable *failures;
+	
 	double default_timeout;
 	char *salt;
 	char *key_prefix;
 	int key_prefix_len;
 ZEND_END_MODULE_GLOBALS(tokyo_tyrant)
 
-ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)
+ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 
 #ifdef ZTS
 # define TOKYO_G(v) TSRMG(tokyo_tyrant_globals_id, zend_tokyo_tyrant_globals *, v)
@@ -133,7 +127,7 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant)
 #define PHP_TOKYO_CONNECTED_OBJECT(intern) \
 { \
 	intern = (php_tokyo_tyrant_object *)zend_object_store_get_object(getThis() TSRMLS_CC); \
-	if (!php_tokyo_tyrant_is_connected(intern TSRMLS_CC)) \
+	if (!php_tt_is_connected(intern TSRMLS_CC)) \
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Not connected to a database"); \
 }
 /* }}} */

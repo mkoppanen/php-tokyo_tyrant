@@ -30,11 +30,11 @@ if test "$PHP_TOKYO_TYRANT" != "no"; then
   PHP_ADD_LIBRARY_WITH_PATH(tokyotyrant, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
   PHP_SUBST(TOKYO_TYRANT_SHARED_LIBADD)
 
-  TOKYO_EXT_FILES="tokyo_tyrant.c tokyo_tyrant_hash.c tokyo_tyrant_funcs.c"
+  TOKYO_EXT_FILES="tokyo_tyrant.c tokyo_tyrant_funcs.c connection.c"
 
   if test "$PHP_TOKYO_TYRANT_SESSION" != "no"; then
     AC_DEFINE(HAVE_PHP_TOKYO_TYRANT_SESSION,1,[ ])
-    TOKYO_EXT_FILES="${TOKYO_EXT_FILES} tokyo_tyrant_session.c tokyo_tyrant_session_funcs.c"
+    TOKYO_EXT_FILES="${TOKYO_EXT_FILES} session_funcs.c server_pool.c failover.c session.c"
   fi
  
   PHP_NEW_EXTENSION(tokyo_tyrant, $TOKYO_EXT_FILES, $ext_shared)

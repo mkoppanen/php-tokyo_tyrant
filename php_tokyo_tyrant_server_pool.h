@@ -15,46 +15,35 @@
   | Authors: Mikko Koppanen <mkoppanen@php.net>                          |
   +----------------------------------------------------------------------+
 */
+#ifndef _PHP_TOKYO_TYRANT_SERVER_POOL_H_
+# define _PHP_TOKYO_TYRANT_SERVER_POOL_H_
 
-#include "php_tokyo_tyrant.h"
-#include "php_tokyo_tyrant_private.h"
-#include "php_tokyo_tyrant_session.h"
+typedef struct _php_tt_server {
+	char *host;
+	int   port;
+} php_tt_server;
 
-/* modulo hashing */
-int php_tokyo_tyrant_simple_hash(php_tokyo_tyrant_session *session, char *key)
-{
-	unsigned int hash = 5381;
-	const char *s;
+typedef struct _php_tt_server_pool {
+	php_tt_server **servers;
+	int num_servers;
+} php_tt_server_pool;
 
-	if (session->server_count == 0) {
-		return -1;
-	}
+php_tt_server *php_tt_server_init(char *host, int port TSRMLS_DC);
 
-	if (key == NULL) 
-		return 0;
+void php_tt_server_deinit(php_tt_server *server TSRMLS_DC);
 
-	for (s = key; *s; s++) {
-		hash = ((hash << 5) + hash) + *s;
-	}
+php_tt_server_pool *php_tt_pool_init(TSRMLS_D);
 
-	hash &= 0x7FFFFFFF;	
-	return hash % session->server_count;
-}
+void php_tt_pool_append(php_tt_server_pool *pool, php_tt_server *server TSRMLS_DC);
 
-/* TODO: other hashing functions (?) */
+void php_tt_pool_append2(php_tt_server_pool *pool, char *host, int port TSRMLS_DC);
 
+void php_tt_pool_deinit(php_tt_server_pool *pool TSRMLS_DC);
 
+php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC);
 
+int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC);
 
+php_tt_server *php_tt_pool_get_server(php_tt_server_pool *pool, int idx TSRMLS_DC);
 
-
-
-
-
-
-
-
-
-
-
-
+#endif

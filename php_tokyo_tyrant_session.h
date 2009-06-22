@@ -15,30 +15,34 @@
   | Authors: Mikko Koppanen <mkoppanen@php.net>                          |
   +----------------------------------------------------------------------+
 */
+#ifndef _PHP_TOKYO_TYRANT_SESSION_H_
+# define _PHP_TOKYO_TYRANT_SESSION_H_
 
-#ifndef _PHP_TOKYO_SESSION_H_
-# define _PHP_TOKYO_SESSION_H_
+#include "php_tokyo_tyrant.h"
+#include "php_tokyo_tyrant_private.h"
+#include "php_tokyo_tyrant_connection.h"
+#include "php_tokyo_tyrant_server_pool.h"
+#include "php_tokyo_tyrant_failover.h"
+#include "php_tokyo_tyrant_funcs.h"
 
-typedef struct _php_tokyo_tyrant_session {
-	char  **host;
-	int    *port;
-	double *timeout;
-	
-	size_t server_count;
-	php_tokyo_tyrant_object *obj_conn;
-	
-	char *pk;
-	int  pk_len;
-	
-	char *rand_part;
-	char *checksum;
-	
-	int idx;
-	zend_bool force_regen;
-	
-} php_tokyo_tyrant_session;
+PS_CREATE_SID_FUNC(tokyo_tyrant);
 
-int (*php_tokyo_hash_func)(php_tokyo_tyrant_session *session, char *key);
+typedef struct _php_tt_session {
+	php_tt_server_pool *pool; /* Pool of session servers */
+	php_tt_conn *conn;        /* Connection to the session server */
+	
+	char *pk;           /* Primary key of the session data */
+	int   pk_len;       /* pk length */
+	int   idx;          /* node where the data is stored at */
+	
+	char *sess_rand;          /* The session id part */
+	int   sess_rand_len;      /* session id length */
+	
+	char *checksum;     /* Session validation checksum */
+	int   checksum_len; /* Checksum length */
+	
+	zend_bool remap;    /* If 1 create_sid will remap the session to a new server */
+
+} php_tt_session;
+
 #endif
-
-

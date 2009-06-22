@@ -19,10 +19,8 @@
 #include "php_tokyo_tyrant.h"
 #include "php_tokyo_tyrant_private.h"
 #include "php_tokyo_tyrant_funcs.h"
-#include "php_tokyo_tyrant_session.h"
-#include "php_tokyo_tyrant_session_funcs.h"
+#include "php_tokyo_tyrant_connection.h"
 
-#include "php_tokyo_tyrant_hash.h"
 
 #include "SAPI.h" 
 #include "php_variables.h"
@@ -60,7 +58,7 @@ PHP_METHOD(tokyotyrant, __construct)
 	
 	intern = PHP_TOKYO_OBJECT;
 
-	if (host && !php_tokyo_tyrant_connect(intern, host, port, params TSRMLS_CC)) {
+	if (host && !php_tt_connect(intern, host, port, params TSRMLS_CC)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
 	
@@ -86,7 +84,7 @@ PHP_METHOD(tokyotyrant, connect)
 	
 	intern = PHP_TOKYO_OBJECT;
 	
-	if (!php_tokyo_tyrant_connect(intern, host, port, params TSRMLS_CC)) {
+	if (!php_tt_connect(intern, host, port, params TSRMLS_CC)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
 
@@ -116,7 +114,7 @@ PHP_METHOD(tokyotyrant, connecturi)
 	
 	intern = PHP_TOKYO_OBJECT;
 
-	if (!php_tokyo_tyrant_connection_from_uri(intern, url TSRMLS_CC)) {
+	if (!php_tt_connect2(intern, url TSRMLS_CC)) {
 		php_url_free(url);
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
@@ -131,7 +129,7 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, cha
 	int code = 0;
 	int new_len;
 	
-	char *kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
+	char *kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
 
 	switch (type) {
 		
@@ -323,14 +321,14 @@ PHP_METHOD(tokyotyrant, get)
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (Z_TYPE_P(key) == IS_ARRAY) {
-		TCMAP *map = php_tokyo_tyrant_zval_to_tcmap(key, 1 TSRMLS_CC);
+		TCMAP *map = php_tt_zval_to_tcmap(key, 1 TSRMLS_CC);
 		tcrdbget3(intern->conn->rdb, map);
 
 		if (!map) {
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the records: %s");
 		}
 
-		php_tokyo_tyrant_tcmap_to_zval(map, return_value TSRMLS_CC);		
+		php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);		
 		tcmapdel(map);
 	} else {
 		zval tmpcopy;
@@ -342,7 +340,7 @@ PHP_METHOD(tokyotyrant, get)
 		INIT_PZVAL(&tmpcopy);
 		convert_to_string(&tmpcopy);
 	
-		kbuf = php_tokyo_tyrant_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
+		kbuf = php_tt_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
 		value = tcrdbget2(intern->conn->rdb, kbuf);
 		zval_dtor(&tmpcopy);
 		efree(kbuf);
@@ -377,7 +375,7 @@ PHP_METHOD(tokyotyrant, add)
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
+	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
 
 	if (type == 0) {
 		if (Z_TYPE_P(value) == IS_DOUBLE) {
@@ -511,7 +509,7 @@ PHP_METHOD(tokyotyrant, size)
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	kbuf = php_tokyo_tyrant_prefix(key, key_len, &new_len TSRMLS_CC);
+	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
 	rec_len = tcrdbvsiz2(intern->conn->rdb, kbuf);
 	efree(kbuf);
 	
@@ -559,7 +557,7 @@ PHP_METHOD(tokyotyrant, fwmkeys)
 	
 	for (i = 0; i < tclistnum(res); i++) {
 		rbuf = tclistval(res, i, &rsiz);
-		kbuf = php_tokyo_tyrant_prefix((char *)rbuf, rsiz, &new_len TSRMLS_CC);
+		kbuf = php_tt_prefix((char *)rbuf, rsiz, &new_len TSRMLS_CC);
 		add_next_index_stringl(return_value, kbuf, new_len, 0);
 	}
 	
@@ -688,7 +686,7 @@ PHP_METHOD(tokyotyranttable, getquery)
 	object_init_ex(return_value, php_tokyo_tyrant_query_sc_entry);
 	intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(return_value TSRMLS_CC); 
 	
-	php_tokyo_tyrant_init_tt_query_object(intern_query, getThis() TSRMLS_CC);
+	php_tt_query_object_init(intern_query, getThis() TSRMLS_CC);
 	return;
 }
 /* }}} */
@@ -746,7 +744,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	memset(pk_str, '\0', 256);
 	pk_str_len = sprintf(pk_str, "%ld", pk);
 	
-	map = php_tokyo_tyrant_zval_to_tcmap(keys, 0 TSRMLS_CC);
+	map = php_tt_zval_to_tcmap(keys, 0 TSRMLS_CC);
 	
 	if (!map) {
 		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to get values from the argument");
@@ -846,7 +844,7 @@ PHP_METHOD(tokyotyranttable, get)
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 	}
 
-	php_tokyo_tyrant_tcmap_to_zval(map, return_value TSRMLS_CC);
+	php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);
 	return;
 }
 /* }}} */
@@ -905,7 +903,7 @@ PHP_METHOD(tokyotyrantquery, __construct)
 	}
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
-	php_tokyo_tyrant_init_tt_query_object(intern, objvar TSRMLS_CC);
+	php_tt_query_object_init(intern, objvar TSRMLS_CC);
 	return;
 }
 /* }}} */
@@ -966,7 +964,7 @@ PHP_METHOD(tokyotyrantquery, search)
 	res    = tcrdbqrysearch(intern->qry);
 	array_init(return_value);
 	
-	php_tokyo_tyrant_tclist_to_array(intern->conn->rdb, res, return_value TSRMLS_CC);
+	php_tt_tclist_to_array(intern->conn->rdb, res, return_value TSRMLS_CC);
 	tclistdel(res);
 	
 	return;
@@ -1366,11 +1364,7 @@ static void php_tokyo_tyrant_object_free_storage(void *object TSRMLS_DC)
 		return;
 	}
 	
-	if (php_tokyo_tyrant_is_connected(intern) && !intern->conn->persistent) {
-		php_tokyo_tyrant_disconnect(intern->conn TSRMLS_CC);
-		free(intern->conn);
-	}
-
+	php_tt_conn_deinit(intern->conn TSRMLS_CC);
 	zend_object_std_dtor(&intern->zo TSRMLS_CC);
 	efree(intern);
 }
@@ -1385,12 +1379,13 @@ static zend_object_value php_tokyo_tyrant_object_new_ex(zend_class_entry *class_
 	intern = (php_tokyo_tyrant_object *) emalloc(sizeof(php_tokyo_tyrant_object));
 	memset(&intern->zo, 0, sizeof(zend_object));
 
-	php_tokyo_tyrant_init_tt_object(intern TSRMLS_CC);
+	/* Init the object. TODO: clone might leak */
+	php_tt_object_init(intern TSRMLS_CC);
 
 	if (ptr) {
 		*ptr = intern;
 	}
-	
+
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
 	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
 
@@ -1410,8 +1405,8 @@ static zend_object_value php_tokyo_tyrant_clone_object(zval *this_ptr TSRMLS_DC)
 	php_tokyo_tyrant_object *old_obj = (php_tokyo_tyrant_object *) zend_object_store_get_object(this_ptr TSRMLS_CC);
 	zend_object_value new_ov = php_tokyo_tyrant_object_new_ex(old_obj->zo.ce, &new_obj TSRMLS_CC);
 	
-	if (php_tokyo_tyrant_is_connected(old_obj)) {
-		php_tokyo_tyrant_connect_ex(new_obj, old_obj->conn->host, old_obj->conn->port, old_obj->conn->timeout, old_obj->conn->options, old_obj->conn->persistent TSRMLS_CC);
+	if (old_obj->conn->connected) {
+		php_tt_connect_ex(new_obj->conn, old_obj->conn->rdb->host, old_obj->conn->rdb->port, old_obj->conn->rdb->timeout, old_obj->conn->persistent TSRMLS_CC);
 	}
 	
 	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
@@ -1437,6 +1432,8 @@ PHP_INI_END()
 static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyrant_globals)
 {
 	tokyo_tyrant_globals->connections = NULL;
+	tokyo_tyrant_globals->failures    = NULL;
+	
 	tokyo_tyrant_globals->default_timeout = 2.0;
 	tokyo_tyrant_globals->salt = NULL;
 	
@@ -1519,30 +1516,32 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 
 #ifdef HAVE_PHP_TOKYO_TYRANT_SESSION
 	php_session_register_module(ps_tokyo_tyrant_ptr);
-	php_tokyo_hash_func = php_tokyo_tyrant_simple_hash;
 #endif
 	return SUCCESS;
 }
 
-static int php_tokyo_tyrant_hash_dtor(php_tokyo_tyrant_conn **datas TSRMLS_DC) 
+static int _php_tt_connections_hash_dtor(TCRDB **datas TSRMLS_DC) 
 {
-	php_tokyo_tyrant_conn *conn = *datas;
-	php_tokyo_tyrant_disconnect(conn);
-
-	free(conn);
-	conn = NULL;
-	
+	TCRDB *rdb = *datas;
+	tcrdbdel(rdb);
 	return ZEND_HASH_APPLY_REMOVE;
 }
 
 PHP_MSHUTDOWN_FUNCTION(tokyo_tyrant)
 {
 	if (TOKYO_G(connections)) {
-		zend_hash_apply(TOKYO_G(connections), (apply_func_t)php_tokyo_tyrant_hash_dtor TSRMLS_CC);
+		zend_hash_apply(TOKYO_G(connections), (apply_func_t)_php_tt_connections_hash_dtor TSRMLS_CC);
 		zend_hash_destroy(TOKYO_G(connections));
 		free(TOKYO_G(connections));
 		TOKYO_G(connections) = NULL;
 	}
+	
+	if (TOKYO_G(failures)) {
+		zend_hash_destroy(TOKYO_G(failures));
+		free(TOKYO_G(failures));
+		TOKYO_G(failures) = NULL;
+	}
+	
 	UNREGISTER_INI_ENTRIES();
 	return SUCCESS;
 }
