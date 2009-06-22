@@ -43,7 +43,7 @@ void php_tt_conn_deinit(php_tt_conn *conn TSRMLS_DC)
 char *php_tt_hash_key(char *host, int port, double timeout, int *key_len TSRMLS_DC)
 {
 	char *buffer = NULL;
-	*key_len = spprintf(&buffer, strlen(host) + 256, "%s|%d|%f", host, port, timeout);
+	*key_len = spprintf(&buffer, strlen(host) + 256, "%s %d %f", host, port, timeout);
 	return buffer;	
 }
 

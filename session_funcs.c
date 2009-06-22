@@ -119,7 +119,7 @@ char *php_tt_create_pk(php_tt_conn *conn, int *pk_len)
 
 zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, int *idx, char **pk_str) 
 {
-	int i, matches = 0, ptr_len;
+	int pos, i, matches = 0, ptr_len;
 	char *ptr = NULL;
 	
 	/* Should be a fairly sensible limitation */
@@ -127,7 +127,7 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 		return 0;
 	}
 		
-	ptr = estrdup(session_id);
+	ptr     = estrdup(session_id);
 	ptr_len = strlen(ptr);
 	
 	/* Make it easy to sscanf */
@@ -144,7 +144,8 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 	memset(*sess_rand, '\0', 65);
 	memset(*checksum,  '\0', 41);
 	memset(*pk_str,    '\0', 65);
-	
+
+	/* TODO: does this cost alot? */
 	matches = sscanf(ptr, "%64s %40s %d %64s", *sess_rand, *checksum, &(*idx), *pk_str);
 	efree(ptr);
 

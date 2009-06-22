@@ -105,12 +105,6 @@ static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend
 	}
 
 	key = estrdup(hash_key->arKey);
-	
-	for (i = 0; i < hash_key->nKeyLength; i++) {
-		if (key[i] == '|') {
-			key[i] = ' ';
-		}
-	}
 
 	memset(host, '\0', 4096);
 	if (sscanf(key, "%s %d %lf", host, &port, &timeout) == 3) {
