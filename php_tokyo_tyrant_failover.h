@@ -30,4 +30,6 @@ void php_tt_server_fail_decr(char *host, int port TSRMLS_DC);
 
 zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC);
 
+void php_tt_health_check(TSRMLS_D);
+
 #endif

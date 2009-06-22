@@ -63,8 +63,10 @@ ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	char *salt;
 	char *key_prefix;
 	int key_prefix_len;
-	int fail_threshold;
+	
 	zend_bool allow_failover;
+	long health_check_probability;
+	long fail_threshold;
 ZEND_END_MODULE_GLOBALS(tokyo_tyrant)
 
 ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);

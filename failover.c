@@ -16,6 +16,7 @@
   +----------------------------------------------------------------------+
 */
 #include "php_tokyo_tyrant_session.h"
+#include "ext/standard/php_rand.h"
 
 long php_tt_server_fail(int op, char *host, int port TSRMLS_DC)
 {
@@ -80,6 +81,11 @@ zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 	if (!TOKYO_G(allow_failover)) {
 		return 1;
 	}
+
+	/* If this matches, execute a health check on servers and restore them to pool if they are fine */
+	if ((php_rand(TSRMLS_C) % TOKYO_G(health_check_probability)) == (php_rand(TSRMLS_C) % TOKYO_G(health_check_probability))) {
+		php_tt_health_check(TSRMLS_C); 
+	}
 	
 	if (fail_count < TOKYO_G(fail_threshold)) {
 		return 1;
@@ -87,3 +93,49 @@ zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 		return 0;
 	}
 }
+
+static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend_hash_key *hash_key)
+{
+	char *key, host[4096];
+	double timeout;
+	int port, i;
+
+	if (hash_key->nKeyLength == 0 || hash_key->nKeyLength >= 4096) {
+		return ZEND_HASH_APPLY_REMOVE;
+	}
+
+	key = estrdup(hash_key->arKey);
+	
+	for (i = 0; i < hash_key->nKeyLength; i++) {
+		if (key[i] == '|') {
+			key[i] = ' ';
+		}
+	}
+
+	memset(host, '\0', 4096);
+	if (sscanf(key, "%s %d %lf", host, &port, &timeout) == 3) {
+		int value;
+		TCRDB *rdb = tcrdbnew();
+		
+		value = tcrdbopen(rdb, host, port);
+		tcrdbdel(rdb);
+
+		if (!value) {
+			efree(key);
+			return ZEND_HASH_APPLY_KEEP;
+		}
+	}
+	efree(key);
+	return ZEND_HASH_APPLY_REMOVE;
+}
+
+void php_tt_health_check(TSRMLS_D) 
+{
+	if (TOKYO_G(failures) && zend_hash_num_elements(TOKYO_G(failures)) > 0) {
+		zend_hash_apply_with_arguments(TOKYO_G(failures), (apply_func_args_t)_php_tt_check_servers, 0);
+	}
+}
+
+
+
+

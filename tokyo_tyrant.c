@@ -1429,6 +1429,7 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateKeyPrefix, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.allow_failover", "1", PHP_INI_ALL, OnUpdateBool, allow_failover, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.fail_threshold", "5", PHP_INI_ALL, OnUpdateLong, fail_threshold, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.health_check_probability", "1000", PHP_INI_ALL, OnUpdateLong, health_check_probability, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 PHP_INI_END()
 
 static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyrant_globals)
@@ -1444,6 +1445,7 @@ static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyran
 	
 	tokyo_tyrant_globals->allow_failover = 1;
 	tokyo_tyrant_globals->fail_threshold = 5;
+	tokyo_tyrant_globals->health_check_probability = 1000;
 }
 
 PHP_MINIT_FUNCTION(tokyo_tyrant)

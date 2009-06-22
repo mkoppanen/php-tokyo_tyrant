@@ -17,6 +17,7 @@
 */
 
 #include "php_tokyo_tyrant_session.h"
+#include "ext/standard/php_rand.h"
 
 php_tt_server *php_tt_server_init(char *host, int port TSRMLS_DC) 
 {
@@ -106,13 +107,12 @@ int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 	php_tt_server *server;
 	int idx = -1;
 	
-	srand(time(NULL));
-	idx = rand() % pool->num_servers;
+	idx    = php_rand(TSRMLS_C) % pool->num_servers;
 	server = pool->servers[idx];
 	
-	/* Server has failed. Check neighbours*/
+	/* Server has failed. Get a new random server */
 	if (!php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
-		int i, x = rand() % pool->num_servers;
+		int i, x = php_rand(TSRMLS_C) % pool->num_servers;
 		
 		for (i = x; i < pool->num_servers; i++) {
 			if (i != idx) {
