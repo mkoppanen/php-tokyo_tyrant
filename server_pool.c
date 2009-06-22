@@ -111,13 +111,13 @@ int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 	server = pool->servers[idx];
 	
 	/* Server has failed. Check neighbours*/
-	if (php_tt_server_color(server->host, server->port TSRMLS_CC) == PHP_TT_COLOR_RED) {
+	if (!php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 		int i, x = rand() % pool->num_servers;
 		
 		for (i = x; i < pool->num_servers; i++) {
 			if (i != idx) {
 				server = pool->servers[i];
-				if (php_tt_server_color(server->host, server->port TSRMLS_CC) < PHP_TT_COLOR_RED) {
+				if (php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 					return i;
 				}
 			}
@@ -126,7 +126,7 @@ int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 		for (i = x; i >= 0; i--) {
 			if (i != idx) {
 				server = pool->servers[i];
-				if (php_tt_server_color(server->host, server->port TSRMLS_CC) < PHP_TT_COLOR_RED) {
+				if (php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 					return i;
 				}
 			}

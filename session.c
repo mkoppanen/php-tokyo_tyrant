@@ -166,7 +166,7 @@ PS_READ_FUNC(tokyo_tyrant)
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		
 		/* Remap if the server has been failed */
-		if (php_tt_server_color(server->host, server->port) == PHP_TT_COLOR_RED) {
+		if (!php_tt_server_ok(server->host, server->port)) {
 			session->remap         = 1;
 			PS(invalid_session_id) = 1;
 			return FAILURE;
@@ -218,7 +218,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		
 		/* Remap if the server has been failed */
-		if (php_tt_server_color(server->host, server->port) == PHP_TT_COLOR_RED) {
+		if (!php_tt_server_ok(server->host, server->port)) {
 			session->remap         = 1;
 			PS(invalid_session_id) = 1;
 			return FAILURE;
