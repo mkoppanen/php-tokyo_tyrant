@@ -225,7 +225,8 @@ zend_bool php_tt_save_sess_data(php_tt_conn *conn, char *rand_part, char *pk, in
 	
 	tcmapput2(cols, "data", data);
 	tcmapput2(cols, "hash", rand_part);
-	tcmapput2(cols, "ts",   timestamp);
+	
+	tcmapput2(cols, (TOKYO_G(ts_fieldname) ? TOKYO_G(ts_fieldname) : "ts"), timestamp);
 
 	if (!tcrdbtblput(conn->rdb, pk, pk_len, cols)) {
 		tcmapdel(cols);
