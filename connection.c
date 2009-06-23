@@ -61,11 +61,13 @@ static TCRDB *php_tt_get_persistent(char *host, int port, double timeout TSRMLS_
 {
 	TCRDB **conn;
 	int key_len;
-	char *key = php_tt_hash_key(host, port, timeout, &key_len TSRMLS_CC);
+	char *key;
 	
 	/* Make sure that connection pool is allocated */
 	if (!TOKYO_G(connections))
 		php_tt_alloc_pool(TSRMLS_C);
+
+	key = php_tt_hash_key(host, port, timeout, &key_len TSRMLS_CC);
 
 	if (zend_hash_find(TOKYO_G(connections), key, key_len + 1, (void **)&conn) == SUCCESS) {
 		efree(key);
@@ -79,10 +81,12 @@ static TCRDB *php_tt_get_persistent(char *host, int port, double timeout TSRMLS_
 static zend_bool php_tt_set_persistent(char *host, int port, double timeout, TCRDB *conn TSRMLS_DC)
 {
 	int key_len;
-	char *key = php_tt_hash_key(host, port, timeout, &key_len TSRMLS_CC);
+	char *key;
 
 	if (!TOKYO_G(connections))
 		php_tt_alloc_pool(TSRMLS_C);
+
+	key = php_tt_hash_key(host, port, timeout, &key_len TSRMLS_CC);
 
 	if (zend_hash_update(TOKYO_G(connections), key, key_len + 1, (void *)&conn, sizeof(TCRDB *), NULL) == SUCCESS) {
 		efree(key);

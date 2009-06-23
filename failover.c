@@ -83,7 +83,7 @@ zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 	}
 
 	/* If this matches, execute a health check on servers and restore them to pool if they are fine */
-	if ((php_rand(TSRMLS_C) % TOKYO_G(health_check_probability)) == (php_rand(TSRMLS_C) % TOKYO_G(health_check_probability))) {
+	if ((php_rand(TSRMLS_C) % TOKYO_G(health_check_divisor)) == (php_rand(TSRMLS_C) % TOKYO_G(health_check_divisor))) {
 		php_tt_health_check(TSRMLS_C); 
 	}
 	
