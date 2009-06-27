@@ -263,6 +263,56 @@ zend_bool php_tt_sess_destroy(php_tt_conn *conn, char *pk, int pk_len TSRMLS_DC)
 	return 0;
 }
 
+zend_bool php_tt_gc(php_tt_server_pool *pool TSRMLS_DC)
+{
+	int i, j;
+	zend_bool overal_res = SUCCESS;
+	char timestamp[64];
+
+	memset(timestamp, '\0', 64);
+	sprintf(timestamp, "%ld", SG(global_request_time));
+
+	for (i = 0; i < pool->num_servers; i++) {
+		php_tt_server *server;
+		php_tt_conn *conn;
+		
+		RDBQRY *query;
+		TCLIST *res;
+		
+		const char *pk;
+		int pk_len;
+		
+		server = php_tt_pool_get_server(pool, i TSRMLS_CC);
+		conn   = php_tt_conn_init(TSRMLS_C);
+		
+		if (!php_tt_connect_ex(conn, server->host, server->port, TOKYO_G(default_timeout), 1 TSRMLS_CC)) {
+			overal_res = FAILURE;
+			continue;
+		}
+		
+		query = tcrdbqrynew(conn->rdb);
+		tcrdbqryaddcond(query, "ts", RDBQCNUMLT, timestamp);
+		res = tcrdbqrysearch(query);
+
+		for (j = 0; j < tclistnum(res); j++){
+			pk = tclistval(res, j, &pk_len);
+
+			if (!tcrdbtblout(conn->rdb, pk, pk_len)) {
+				if (tcrdbecode(conn->rdb) != TTENOREC) {
+					php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
+					overal_res = FAILURE;
+					break;
+				}
+			}
+		}
+		
+		tclistdel(res);
+		tcrdbqrydel(query);
+		php_tt_conn_deinit(conn TSRMLS_CC);
+	}
+	return overal_res;
+}
+
 #if 0
 void php_tt_regen_id(php_tt_session *session TSRMLS_DC) 
 {

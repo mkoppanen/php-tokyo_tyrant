@@ -67,7 +67,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	if (!pool) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Unable to parse session.save_path");
 	}
-	
+
 	/* Create idx if there isn't one already */
 	if (idx == -1) {	
 		idx = php_tt_pool_map(pool, sess_rand TSRMLS_CC);
@@ -250,6 +250,12 @@ PS_DESTROY_FUNC(tokyo_tyrant)
 
 PS_GC_FUNC(tokyo_tyrant)
 {
+	/* Handle expiration on PHP side? */
+	if (TOKYO_G(php_expiration)) {
+		TT_SESS_DATA;
+		return php_tt_gc(session->pool TSRMLS_CC);
+	}
+	
 	return SUCCESS;
 }
 

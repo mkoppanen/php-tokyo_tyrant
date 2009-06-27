@@ -67,6 +67,8 @@ ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	zend_bool allow_failover;
 	long health_check_divisor;
 	long fail_threshold;
+	
+	zend_bool php_expiration;
 ZEND_END_MODULE_GLOBALS(tokyo_tyrant)
 
 ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);

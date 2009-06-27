@@ -40,4 +40,6 @@ zend_bool php_tt_sess_touch(php_tt_conn *conn, char *current_rand, char *sess_ra
 
 zend_bool php_tt_sess_destroy(php_tt_conn *conn, char *pk, int pk_len TSRMLS_DC);
 
+zend_bool php_tt_gc(php_tt_server_pool *pool TSRMLS_DC);
+
 #endif
