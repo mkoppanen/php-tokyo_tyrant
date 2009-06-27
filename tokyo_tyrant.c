@@ -1445,7 +1445,7 @@ static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyran
 	
 	tokyo_tyrant_globals->allow_failover = 1;
 	tokyo_tyrant_globals->fail_threshold = 5;
-	tokyo_tyrant_globals->health_check_probability = 1000;
+	tokyo_tyrant_globals->health_check_divisor = 1000;
 }
 
 PHP_MINIT_FUNCTION(tokyo_tyrant)
