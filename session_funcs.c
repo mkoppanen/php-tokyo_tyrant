@@ -265,7 +265,7 @@ zend_bool php_tt_sess_destroy(php_tt_conn *conn, char *pk, int pk_len TSRMLS_DC)
 
 zend_bool php_tt_gc(php_tt_server_pool *pool TSRMLS_DC)
 {
-	int i, j;
+	int i;
 	zend_bool overal_res = SUCCESS;
 	char timestamp[64];
 
