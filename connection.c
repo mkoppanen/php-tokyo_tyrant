@@ -32,10 +32,18 @@ php_tt_conn *php_tt_conn_init(TSRMLS_D)
 	return conn;
 }
 
+void php_tt_disconnect_ex(php_tt_conn *conn, zend_bool dealloc_rdb TSRMLS_DC) {
+	if (conn->rdb && dealloc_rdb) {
+		tcrdbdel(conn->rdb);
+		conn->rdb = NULL;
+	}
+	conn->connected = 0;
+}
+
 void php_tt_conn_deinit(php_tt_conn *conn TSRMLS_DC) 
 {	
 	if (!conn->persistent && conn->rdb) {
-		tcrdbdel(conn->rdb);
+		php_tt_disconnect_ex(conn, 1);
 	}
 	efree(conn);
 }
@@ -94,14 +102,6 @@ static zend_bool php_tt_set_persistent(char *host, int port, double timeout, TCR
 	}
 	efree(key);
 	return 1;
-}
-
-void php_tt_disconnect_ex(php_tt_conn *conn, zend_bool dealloc_rdb TSRMLS_DC) {
-	if (conn->rdb && dealloc_rdb) {
-		tcrdbdel(conn->rdb);
-		conn->rdb = NULL;
-	}
-	conn->connected = 0;
 }
 
 zend_bool php_tt_connect_ex(php_tt_conn *conn, char *host, int port, double timeout, zend_bool persistent TSRMLS_DC) 
