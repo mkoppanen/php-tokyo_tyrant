@@ -152,8 +152,11 @@ zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *p
 	query->conn    = db->conn;
 	query->parent  = parent;
 	query->res     = NULL;
-	
+#ifdef Z_REFCOUNT_P
+	Z_SET_REFCOUNT_P(parent, Z_REFCOUNT_P(parent) + 1);
+#else
 	parent->refcount++;
+#endif
 	return 1;
 }
 /* }}} */

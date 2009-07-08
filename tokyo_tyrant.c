@@ -1323,8 +1323,14 @@ static void php_tokyo_tyrant_query_object_free_storage(void *object TSRMLS_DC)
 		return;
 	}
 	
+#ifdef Z_REFCOUNT_P
+	Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
+	if (Z_REFCOUNT_P(intern->parent) <= 0) {
+#else
 	intern->parent->refcount--; 
-	if (intern->parent->refcount == 0) { /* TODO: check if this leaks */
+	if (intern->parent->refcount == 0) {
+#endif		
+	 /* TODO: check if this leaks */
 		efree(intern->parent);
 	}
 	
