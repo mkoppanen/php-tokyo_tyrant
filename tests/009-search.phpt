@@ -16,19 +16,19 @@ $tt->put(null, array('test' => 'cde456111'));
 $tt->put(null, array('test' => 'abba'));
 
 $query = $tt->getQuery();
-$query->addCond('test', TokyoTyrant::RDBQ_CSTREQ, 'cde456111');
+$query->addCond('test', TokyoTyrant::RDBQC_STREQ, 'cde456111');
 var_dump($query->search());
 
 echo "------------------\n";
 
 $query = $tt->getQuery();
-$query->addCond('test', TokyoTyrant::RDBQ_CSTREQ, 'abc123111');
+$query->addCond('test', TokyoTyrant::RDBQC_STREQ, 'abc123111');
 var_dump($query->search());
 
 echo "------------------\n";
 
 $query = $tt->getQuery();
-$query->addCond('test', TokyoTyrant::RDBQ_CSTREW, '111');
+$query->addCond('test', TokyoTyrant::RDBQC_STREW, '111');
 var_dump($query->search());
 
 echo "------------------\n";
