@@ -1493,24 +1493,31 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	
 	TOKYO_REGISTER_CONST_LONG("DEFAULT_PORT", PHP_TOKYO_TYRANT_DEFAULT_PORT);
 	
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTREQ", RDBQCSTREQ); 		/* string is equal to */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRINC", RDBQCSTRINC);		/* string is included in */
-  	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRBW", RDBQCSTRBW);		/* string begins with */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTREW", RDBQCSTREW);		/* string ends with */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRAND", RDBQCSTRAND);		/* string includes all tokens in */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTROR", RDBQCSTROR);		/* string includes at least one token in */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTROREQ", RDBQCSTROREQ);	/* string is equal to at least one token in */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CSTRRX", RDBQCSTRRX);		/* string matches regular expressions of */
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMEQ", RDBQCNUMEQ);		/* number is equal to */                            
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMGT", RDBQCNUMGT);		/* number is greater than */                        
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMGE", RDBQCNUMGE);		/* number is greater than or equal to */           
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMLT", RDBQCNUMLT);		/* number is less than */                           
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMLE", RDBQCNUMLE);		/* number is less than or equal to */               
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMBT", RDBQCNUMBT);		/* number is between two tokens of */              
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNUMOREQ", RDBQCNUMOREQ);	/* number is equal to at least one token in */     
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNEGATE", RDBQCNEGATE);		/* negation flag */                                 
-	TOKYO_REGISTER_CONST_LONG("RDBQ_CNOIDX", RDBQCNOIDX);		/* no index flag */     
-	
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STREQ", RDBQCSTREQ); 		/* string is equal to */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STRINC", RDBQCSTRINC);		/* string is included in */
+  	TOKYO_REGISTER_CONST_LONG("RDBQC_STRBW", RDBQCSTRBW);		/* string begins with */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STREW", RDBQCSTREW);		/* string ends with */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STRAND", RDBQCSTRAND);		/* string includes all tokens in */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STROR", RDBQCSTROR);		/* string includes at least one token in */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STROREQ", RDBQCSTROREQ);	/* string is equal to at least one token in */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_STRRX", RDBQCSTRRX);		/* string matches regular expressions of */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMEQ", RDBQCNUMEQ);		/* number is equal to */                            
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMGT", RDBQCNUMGT);		/* number is greater than */                        
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMGE", RDBQCNUMGE);		/* number is greater than or equal to */           
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMLT", RDBQCNUMLT);		/* number is less than */                           
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMLE", RDBQCNUMLE);		/* number is less than or equal to */               
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMBT", RDBQCNUMBT);		/* number is between two tokens of */              
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMOREQ", RDBQCNUMOREQ);	/* number is equal to at least one token in */     
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NEGATE", RDBQCNEGATE);		/* negation flag */                                 
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NOIDX", RDBQCNOIDX);		/* no index flag */ 
+
+#if PHP_TOKYO_TYRANT_VERSION >= 1001029
+	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSPH", RDBQCFTSPH);		/* full-text search with the phrase of */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSAND", RDBQCFTSAND);		/* full-text search with all tokens in */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSOR", RDBQCFTSOR);		/* full-text search with at least one token in */
+	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSEX", RDBQCFTSEX);		/* full-text search with the compound expression of */
+#endif
+
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRASC", RDBQOSTRASC);		/* string ascending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRDESC", RDBQOSTRDESC);	/* string descending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_NUMASC", RDBQONUMASC);		/* number ascending */
