@@ -123,7 +123,7 @@ PHP_METHOD(tokyotyrant, connecturi)
 }
 /* }}} */
 
-/* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, char *value TSRMLS_DC) */
+/* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value TSRMLS_DC) */
 static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value TSRMLS_DC)
 {
 	int code = 0;
