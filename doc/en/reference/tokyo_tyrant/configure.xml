@@ -30,9 +30,11 @@
      <member>session.save_path="tcp://hostname1:2000,tcp://hostname2:2000"</member>
     </simplelist>
   </para>
-  <para>
-   It is important to make sure that session_salt matches on all servers
-  </para>
+  <note>
+   <simpara>
+    It is important to make sure that session_salt matches on all servers.
+   </simpara>
+  </note>
  </section>
 
  <section xml:id="tokyo-tyrant.how-session-handler-works">
