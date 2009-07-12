@@ -648,7 +648,7 @@ PHP_METHOD(tokyotyrant, setmaster)
 {
 	php_tokyo_tyrant_object *intern;
 	char *host;
-	int host_len;
+	int host_len, code;
 	long ts, opts = 0, port;
 	zend_bool check_consistency = 1;
 	
@@ -661,7 +661,13 @@ PHP_METHOD(tokyotyrant, setmaster)
 		opts |= RDBROCHKCON;
 	}
 	
-	if (!tcrdbsetmst(intern->conn->rdb, host, port, ts, opts)) {
+	if (host_len == 0) {
+		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, ts, opts);
+	} else {
+		code = tcrdbsetmst(intern->conn->rdb, host, port, ts, opts);
+	}
+	
+	if (!code) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set the master: %s");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
