@@ -138,7 +138,7 @@ int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 
 php_tt_server *php_tt_pool_get_server(php_tt_server_pool *pool, int idx TSRMLS_DC)
 {
-	if (idx >= pool->num_servers) {
+	if (idx >= pool->num_servers || idx < 0) {
 		return NULL;
 	}
 	
