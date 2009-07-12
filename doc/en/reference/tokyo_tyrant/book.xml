@@ -8,7 +8,8 @@
  <preface xml:id="intro.tokyo-tyrant">
   &reftitle.intro;
   <para>
-   tokyo_tyrant extension allows connections to remote Tokyo Tyrant databases.
+   tokyo_tyrant extension provides a wrapper for Tokyo Tyrant client libraries. The extension
+   contains the normal key-value API and the table API.
   </para>
  </preface>
 
