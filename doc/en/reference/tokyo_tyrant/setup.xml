@@ -13,27 +13,18 @@
  </section>
 
  <!-- {{{ Installation -->
- <section xml:id="tokyo-tyrant.installation">
-  &reftitle.install;
   &reference.tokyo-tyrant.configure;
- </section>
  <!-- or &reference.tokyo-tyrant.configure; -->
  <!-- }}} -->
 
  <!-- {{{ Configuration -->
- <section xml:id="tokyo-tyrant.configuration">
-  &reftitle.runtime;
-  &reference.tokyo-tyrant.ini;
- </section>
+ &reference.tokyo-tyrant.ini;
  <!-- or  -->
  <!-- }}} -->
 
  <section xml:id="tokyo-tyrant.resources">
   &reftitle.resources;
-  <!-- Use &no.resource; if there no resources -->
-  <para>
-   &no.resource;
-  </para>
+  &no.resource;
  </section>
 
 </chapter>
