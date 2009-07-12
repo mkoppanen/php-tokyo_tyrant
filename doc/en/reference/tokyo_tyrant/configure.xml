@@ -32,7 +32,7 @@
   </para>
   <note>
    <simpara>
-    It is important to make sure that session_salt matches on all servers.
+    It is important to make sure that <link linkend="ini.tokyo-tyrant.session-salt">tokyo_tyrant.session_salt</link> matches on all servers.
    </simpara>
   </note>
  </section>
