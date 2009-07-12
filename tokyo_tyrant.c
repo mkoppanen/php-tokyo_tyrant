@@ -388,6 +388,7 @@ PHP_METHOD(tokyotyrant, add)
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_INT:
+			convert_to_long(value);
 			retint = tcrdbaddint(intern->conn->rdb, kbuf, new_len, Z_LVAL_P(value));
 			if (retint == INT_MIN) {
 				RETURN_NULL();
@@ -396,6 +397,7 @@ PHP_METHOD(tokyotyrant, add)
 		break;
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_DOUBLE:
+			convert_to_double(value);
 			retdouble = tcrdbadddouble(intern->conn->rdb, kbuf, new_len, Z_DVAL_P(value));
 			if (isnan(retdouble)) {
 				RETURN_NULL();
@@ -632,8 +634,8 @@ PHP_METHOD(tokyotyrant, restore)
 		opts |= RDBROCHKCON;
 	}
 
-	if (!tcrdbcopy(intern->conn->rdb, path)) {
-		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to copy the database: %s");
+	if (!tcrdbrestore(intern->conn->rdb, path, ts, opts)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to restore the database: %s");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
@@ -1518,6 +1520,9 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSEX", RDBQCFTSEX);		/* full-text search with the compound expression of */
 #endif
 
+	TOKYO_REGISTER_CONST_LONG("RDBXO_LCKREC", RDBXOLCKREC);		/* record locking */
+	TOKYO_REGISTER_CONST_LONG("RDBXO_LCKGLB", RDBXOLCKGLB);		/* global locking */
+
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRASC", RDBQOSTRASC);		/* string ascending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRDESC", RDBQOSTRDESC);	/* string descending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_NUMASC", RDBQONUMASC);		/* number ascending */
@@ -1530,7 +1535,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBIT_KEEP", RDBITKEEP);
 
 	TOKYO_REGISTER_CONST_LONG("RDB_RECINT", PHP_TOKYO_TYRANT_RECTYPE_INT);
-	TOKYO_REGISTER_CONST_LONG("RDB_RECDOUBLE", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
+	TOKYO_REGISTER_CONST_LONG("RDB_RECDBL", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
 	
 #undef TOKYO_REGISTER_CONST_LONG
 
