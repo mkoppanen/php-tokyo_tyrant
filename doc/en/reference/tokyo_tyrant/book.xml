@@ -11,13 +11,18 @@
    tokyo_tyrant extension provides a wrapper for Tokyo Tyrant client libraries. The extension
    contains the normal key-value API and the table API.
   </para>
+  <para>
+   Tokyo Tyrant is written by Mikio Hirabayashi and is licensed under GNU Lesser General Public License.
+  </para>
  </preface>
 
  &reference.tokyo-tyrant.setup;
  &reference.tokyo-tyrant.constants;
  &reference.tokyo-tyrant.examples;
- &reference.tokyo-tyrant.reference;
- 
+
+ &reference.tokyo-tyrant.tokyotyrant;
+ &reference.tokyo-tyrant.tokyotyranttable;
+ &reference.tokyo-tyrant.tokyotyrantquery;
 
 </book>
 

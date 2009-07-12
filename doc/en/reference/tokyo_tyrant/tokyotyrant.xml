@@ -246,7 +246,7 @@
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDB_RECDOUBLE">TokyoTyrant::RDB_RECDOUBLE</varname>
+     <varname linkend="tokyotyrant.constants.RDB_RECDBL">TokyoTyrant::RDB_RECDBL</varname>
      <initializer>2</initializer>
     </fieldsynopsis>
     
@@ -261,7 +261,7 @@
   <section xml:id="tokyotyrant.constants">
    &reftitle.constants;
    <section xml:id="tokyotyrant.constants.types">
-    <title>TokyoTyrant Node Types</title>
+    <title>TokyoTyrant Constants</title>
     <variablelist>
 
      <varlistentry xml:id="tokyotyrant.constants.DEFAULT_PORT">
