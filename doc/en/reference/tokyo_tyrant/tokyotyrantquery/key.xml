@@ -34,7 +34,7 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><methodname>TokyoTyrantQuery iterator example</title>
+    <title>TokyoTyrantQuery iterator example</title>
     <programlisting role="php">
 <![CDATA[
 <?php
