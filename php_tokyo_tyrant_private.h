@@ -103,10 +103,10 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 #define PHP_TOKYO_TYRANT_EXCEPTION(intern, format) \
 { \
 	int error_code = tcrdbecode(intern->conn->rdb); \
-	if (tcrdbecode(intern->conn->rdb) == TTENOREC) { \
+	if (error_code == TTENOREC) { \
 		RETURN_NULL(); \
 	} \
-	zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 1 TSRMLS_CC, format, tcrdberrmsg(error_code)); \
+	zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, error_code TSRMLS_CC, format, tcrdberrmsg(error_code)); \
 	return; \
 }
 /* }}} */
@@ -115,7 +115,7 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 #define PHP_TOKYO_TYRANT_EXCEPTION_FREE(intern, format) \
 { \
 	int error_code = tcrdbecode(intern->conn->rdb); \
-	zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 1 TSRMLS_CC, format, tcrdberrmsg(error_code)); \
+	zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, error_code TSRMLS_CC, format, tcrdberrmsg(error_code)); \
 	efree(format); \
 	return; \
 }
@@ -124,7 +124,7 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 /* {{{ #define PHP_PHP_TOKYO_TYRANT_EXCEPTION_MSG(message) */
 #define PHP_TOKYO_TYRANT_EXCEPTION_MSG(message) \
 { \
-	zend_throw_exception(php_tokyo_tyrant_exception_sc_entry, message, 1 TSRMLS_CC); \
+	zend_throw_exception(php_tokyo_tyrant_exception_sc_entry, message, TTEMISC TSRMLS_CC); \
 	return; \
 }
 /* }}} */

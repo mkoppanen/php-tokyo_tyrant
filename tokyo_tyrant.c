@@ -241,7 +241,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), NULL TSRMLS_CC)) {
-				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to remove the record '%s': %s", 
+				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to remove the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
 			}
@@ -252,7 +252,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 			convert_to_string(value);
 			
 			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
-				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, 0 TSRMLS_CC, "Unable to store the record '%s': %s", 
+				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to store the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
 			}
@@ -1539,6 +1539,16 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBIT_OPT", RDBITOPT);			/* optimize */
 	TOKYO_REGISTER_CONST_LONG("RDBIT_VOID", RDBITVOID);			/* void */
 	TOKYO_REGISTER_CONST_LONG("RDBIT_KEEP", RDBITKEEP);			/* keep existing index */
+	
+	TOKYO_REGISTER_CONST_LONG("TTE_SUCCESS", TTESUCCESS);		/* success */
+	TOKYO_REGISTER_CONST_LONG("TTE_INVALID", TTEINVALID);		/* invalid operation */
+	TOKYO_REGISTER_CONST_LONG("TTE_NOHOST", TTENOHOST);			/* host not found */
+	TOKYO_REGISTER_CONST_LONG("TTE_REFUSED", TTEREFUSED);		/* connection refused */
+	TOKYO_REGISTER_CONST_LONG("TTE_SEND", TTESEND);				/* send error */
+	TOKYO_REGISTER_CONST_LONG("TTE_RECV", TTERECV);				/* recv error */
+	TOKYO_REGISTER_CONST_LONG("TTE_KEEP", TTEKEEP);				/* existing record */
+	TOKYO_REGISTER_CONST_LONG("TTE_NOREC", TTENOREC);			/* no record found */
+	TOKYO_REGISTER_CONST_LONG("TTE_MISC", TTEMISC);				/* miscellaneous error */
 
 	TOKYO_REGISTER_CONST_LONG("RDB_RECINT", PHP_TOKYO_TYRANT_RECTYPE_INT);
 	TOKYO_REGISTER_CONST_LONG("RDB_RECDBL", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
