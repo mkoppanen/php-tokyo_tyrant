@@ -51,6 +51,8 @@ typedef struct _php_tokyo_tyrant_query_object  {
 	zval *parent;
 	int pos;
 	TCLIST *res;
+	
+	zend_bool executed;
 
 } php_tokyo_tyrant_query_object;
 /* }}} */

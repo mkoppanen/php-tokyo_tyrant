@@ -1084,11 +1084,12 @@ PHP_METHOD(tokyotyrantquery, rewind)
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
 	
-	if (intern->res) {
-		tclistdel(intern->res);
+	if (!intern->executed) { 
+		if (intern->res) {
+			tclistdel(intern->res);
+		}
+		intern->res = tcrdbqrysearch(intern->qry);
 	}
-
-	intern->res = tcrdbqrysearch(intern->qry);
 	intern->pos = 0;
 	RETURN_TRUE;
 }
@@ -1289,7 +1290,7 @@ static function_entry php_tokyo_tyrant_table_class_methods[] =
 };
 
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_construct_args, 0, 0, 2)
-	ZEND_ARG_OBJ_INFO(0, TokyoTyrant, TokyoTyrant, 0) 
+	ZEND_ARG_OBJ_INFO(0, TokyoTyrantTable, TokyoTyrantTable, 0) 
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_addcond_args, 0, 0, 3)
@@ -1361,6 +1362,8 @@ static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *cla
 	/* Allocate memory for it */
 	intern = (php_tokyo_tyrant_query_object *) emalloc(sizeof(php_tokyo_tyrant_query_object));
 	memset(&intern->zo, 0, sizeof(zend_object));
+
+	intern->executed = 0;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
 	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
