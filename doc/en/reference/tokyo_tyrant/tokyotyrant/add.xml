@@ -74,12 +74,18 @@
 $tt = new TokyoTyrant("localhost", TokyoTyrant::DEFAULT_PORT);
 /* Adds integer 3 to key and creates a new key */
 $tt->add("test", 3);
+
 /* String value is converted to double */
 echo $tt->add("test", "3.5", TokyoTyrant::RDB_RECDBL);
-/* Echoes 6.5 assuming the key 'test' did not exist */
 ?>
 ]]>
     </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+6.5
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>

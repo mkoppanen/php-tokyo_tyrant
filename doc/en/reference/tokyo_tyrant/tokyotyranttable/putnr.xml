@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<refentry xml:id="tokyotyrant.put" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<refentry xml:id="tokyotyranttable.putnr" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>TokyoTyrant::put</refname>
-  <refpurpose>Puts values</refpurpose>
+  <refname>TokyoTyrantTable::putNr</refname>
+  <refpurpose>Puts value</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>TokyoTyrant</type><methodname>TokyoTyrant::put</methodname>
+   <modifier>public</modifier> <type>void</type><methodname>TokyoTyrantTable::putNr</methodname>
    <methodparam><type>mixed</type><parameter>keys</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>value</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Puts a key-value pair into the database or multiple key-value pairs. If <parameter>keys</parameter> is
-   string then the second parameter value defines the value. 
-   The second parameter is mandatory if <parameter>keys</parameter> is a string. If the key exists the value
-   will be replaced with new value.
+   	This method is not supported on table databases. Calling this method through TokyoTyrantTable 
+    is considered an error and an TokyoTyrantException will be thrown.
   </para>
  </refsect1>
 
@@ -49,39 +47,8 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-    This method returns a reference to the current object and throws TokyoTyrantException on failure.
-  </para>
- </refsect1>
-
- <refsect1 role="examples">
-  &reftitle.examples;
-  <para>
-   <example>
-    <title><methodname>TokyoTyrant::put</methodname> example</title>
-    <programlisting role="php">
-<![CDATA[
-<?php
-/* Connect to a database on default port */
-$tt = new TokyoTyrant("localhost");
-
-/* Put single key-value pair */
-$tt->put("key", "value");
-
-/* Put key-value pairs, new value overwrites the old */
-$tt->put(array("key1" => "value1", "key" => "value2"));
-
-/* Get back one key */
-echo $tt->get("key");
-?>
-]]>
-    </programlisting>
-    &example.outputs;
-    <screen>
-<![CDATA[
-value2
-]]>
-    </screen>
-   </example>
+    This method is not supported on table databases. Calling this method through TokyoTyrantTable 
+    is considered an error and an TokyoTyrantException will be thrown.
   </para>
  </refsect1>
 
@@ -89,6 +56,7 @@ value2
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><methodname>TokyoTyrant::putNr</methodname></member>
     <member><methodname>TokyoTyrant::putKeep</methodname></member>
     <member><methodname>TokyoTyrant::putCat</methodname></member>
    </simplelist>

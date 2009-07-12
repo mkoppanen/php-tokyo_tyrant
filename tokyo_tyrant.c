@@ -144,6 +144,10 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, cha
 		case PHP_TOKYO_TYRANT_OP_PUTCAT:
 			code = tcrdbputcat2(rdb, kbuf, value);
 		break;
+		
+		case PHP_TOKYO_TYRANT_OP_PUTNR:
+			code = tcrdbputnr2(rdb, kbuf, value);
+		break;
 
 		case PHP_TOKYO_TYRANT_OP_OUT:
 			code = tcrdbout2(rdb, kbuf);
@@ -229,7 +233,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		zend_hash_apply_with_arguments(Z_ARRVAL_P(key), (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
 		
 		if (!code) {
-			if (type  == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
+			if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to remove the records: %s");
 			} else {
 				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to put the records: %s");
@@ -292,6 +296,47 @@ PHP_METHOD(tokyotyrant, putkeep)
 PHP_METHOD(tokyotyrant, putcat) 
 {
 	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTCAT);
+}
+/* }}} */
+
+/* {{{ TokyoTyrant TokyoTyrant::putnr(mixed key[, string value]);
+	Put a record and don't wait for server to respond
+	@throws TokyoTyrantException if put fails
+	@throws TokyoTyrantException if key is not an array and not value is provided
+*/
+PHP_METHOD(tokyotyrant, putnr) 
+{
+	_php_tt_write_wrapper(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_TOKYO_TYRANT_OP_PUTNR);
+}
+/* }}} */
+
+/* {{{ TokyoTyrant TokyoTyrant::putshl(string key, string value, int width);
+	Concatenate a string value and shift to left
+	@throws TokyoTyrantException if put fails
+	@throws TokyoTyrantException if key is not an array and not value is provided
+*/
+PHP_METHOD(tokyotyrant, putshl) 
+{
+	php_tokyo_tyrant_object *intern;
+	char *kbuf, *key, *value;
+	int code, key_len, value_len, new_len;
+	long width;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &key, &key_len, &value, &value_len, &width) == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	/* Create a prefix */
+	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
+	code = tcrdbputshl2(intern->conn->rdb, kbuf, value, width);
+	efree(kbuf);
+	
+	if (!code) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to putshl the record: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
 
@@ -816,12 +861,28 @@ PHP_METHOD(tokyotyranttable, putcat)
 
 /* {{{ int TokyoTyrantTable::add(void);
 	not supported
-	@throws TokyoTyrantException if not connected to a database
-	@throws TokyoTyrantException if get fails
 */
 PHP_METHOD(tokyotyranttable, add)
 {
 	PHP_TOKYO_TYRANT_EXCEPTION_MSG("add operation is not supported with table databases");
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::putShl(void);
+	not supported
+*/
+PHP_METHOD(tokyotyranttable, putshl)
+{
+	PHP_TOKYO_TYRANT_EXCEPTION_MSG("putShl operation is not supported with table databases");
+}
+/* }}} */
+
+/* {{{ int TokyoTyrantTable::putnr(void);
+	not supported
+*/
+PHP_METHOD(tokyotyranttable, putnr)
+{
+	PHP_TOKYO_TYRANT_EXCEPTION_MSG("putNr operation is not supported with table databases");
 }
 /* }}} */
 
@@ -1183,6 +1244,12 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_put_args, 0, 0, 1)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_putshl_args, 0, 0, 1)
+	ZEND_ARG_INFO(0, key)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, width)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_get_args, 0, 0, 1)
 	ZEND_ARG_INFO(0, keys)
 ZEND_END_ARG_INFO()
@@ -1256,14 +1323,18 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 	PHP_ME(tokyotyrant, copy,			tokyo_tyrant_copy_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, restore,		tokyo_tyrant_restore_args,		ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, setmaster,		tokyo_tyrant_setmaster_args,	ZEND_ACC_PUBLIC)
-	
+
 	/* These are the shared methods */
 	PHP_ME(tokyotyrant, put,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, putkeep,		tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, putcat,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, get,			tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, out,			tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
+	
+	/* These throw exception on table api */
 	PHP_ME(tokyotyrant, add,			tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, putshl,			tokyo_tyrant_putshl_args,		ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, putnr,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL} 
 };
@@ -1281,8 +1352,11 @@ static function_entry php_tokyo_tyrant_table_class_methods[] =
 	PHP_ME(tokyotyranttable, putcat,	tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, get,		tokyo_tyrant_get_args,				ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, out,		tokyo_tyrant_out_args,				ZEND_ACC_PUBLIC)
-	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,				ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, setindex,	tokyo_tyrant_table_setindex_args,	ZEND_ACC_PUBLIC)
+	/* Inherit and throw error if used */
+	PHP_ME(tokyotyranttable, add,		tokyo_tyrant_add_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putshl,	tokyo_tyrant_putshl_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyranttable, putnr,		tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
 	/* Table API */
 	PHP_ME(tokyotyranttable, getquery,		tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyranttable, genuid,		tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)

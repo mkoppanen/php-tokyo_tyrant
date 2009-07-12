@@ -58,12 +58,41 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$tt = new TokyoTyrant();
-$tt->connect("localhost", 1978);
-var_dump($tt->fwmKeys("key_", 10));
+
+$tt = new TokyoTyrant("localhost");
+
+/* Create 20 macthing keys */
+for ($i = 0; $i < 20; $i++) {
+	$tt->put("key_" . $i, "value_" . $i);
+}
+
+/* Create 20 non-macthing keys */
+for ($i = 0; $i < 20; $i++) {
+	$tt->put("something_" . $i, "data_" . $i);
+}
+
+/* Get five matching keys */
+var_dump($tt->fwmKeys("key_", 5));
 ?>
 ]]>
     </programlisting>
+    &example.outputs.similar;
+    <screen>
+<![CDATA[
+array(5) {
+  [0]=>
+  string(5) "key_5"
+  [1]=>
+  string(6) "key_14"
+  [2]=>
+  string(5) "key_6"
+  [3]=>
+  string(6) "key_15"
+  [4]=>
+  string(5) "key_7"
+}
+]]>
+    </screen>
    </example>
   </para>
  </refsect1>

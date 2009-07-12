@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<refentry xml:id="tokyotyrant.put" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<refentry xml:id="tokyotyrant.putshl" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>TokyoTyrant::put</refname>
-  <refpurpose>Puts values</refpurpose>
+  <refname>TokyoTyrant::putShl</refname>
+  <refpurpose>Concatenates to a record</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>TokyoTyrant</type><methodname>TokyoTyrant::put</methodname>
-   <methodparam><type>mixed</type><parameter>keys</parameter></methodparam>
-   <methodparam choice="opt"><type>string</type><parameter>value</parameter></methodparam>
+   <modifier>public</modifier> <type>void</type><methodname>TokyoTyrant::putShl</methodname>
+   <methodparam><type>string</type><parameter>key</parameter></methodparam>
+   <methodparam><type>string</type><parameter>value</parameter></methodparam>
+   <methodparam><type>int</type><parameter>width</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Puts a key-value pair into the database or multiple key-value pairs. If <parameter>keys</parameter> is
-   string then the second parameter value defines the value. 
-   The second parameter is mandatory if <parameter>keys</parameter> is a string. If the key exists the value
-   will be replaced with new value.
+   	Concatenate to a record and shift to left. 
   </para>
  </refsect1>
 
@@ -27,10 +25,10 @@
   <para>
    <variablelist>
     <varlistentry>
-     <term><parameter>keys</parameter></term>
+     <term><parameter>key</parameter></term>
      <listitem>
       <para>
-       A string key or an array of key-value pairs
+       A string key
       </para>
      </listitem>
     </varlistentry>
@@ -38,7 +36,15 @@
      <term><parameter>value</parameter></term>
      <listitem>
       <para>
-       The value in case a string key is used
+       The value to concatenate
+      </para>
+     </listitem>
+    </varlistentry>
+    <varlistentry>
+     <term><parameter>width</parameter></term>
+     <listitem>
+      <para>
+       The width of the record
       </para>
      </listitem>
     </varlistentry>
@@ -49,7 +55,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-    This method returns a reference to the current object and throws TokyoTyrantException on failure.
+   This method returns a reference to the current object and throws TokyoTyrantException on failure.
   </para>
  </refsect1>
 
@@ -57,20 +63,20 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><methodname>TokyoTyrant::put</methodname> example</title>
+    <title><methodname>TokyoTyrant::putShl</methodname> example</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 /* Connect to a database on default port */
 $tt = new TokyoTyrant("localhost");
 
-/* Put single key-value pair */
-$tt->put("key", "value");
+/* Create a new key */
+$tt->put("key", "just a long piece of data");
 
-/* Put key-value pairs, new value overwrites the old */
-$tt->put(array("key1" => "value1", "key" => "value2"));
+/* Concatenate and shift to left */
+$tt->putShl("key", " and string", 15);
 
-/* Get back one key */
+/* Echo the key */
 echo $tt->get("key");
 ?>
 ]]>
@@ -78,7 +84,7 @@ echo $tt->get("key");
     &example.outputs;
     <screen>
 <![CDATA[
-value2
+data and string
 ]]>
     </screen>
    </example>
@@ -89,6 +95,7 @@ value2
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><methodname>TokyoTyrant::put</methodname></member>
     <member><methodname>TokyoTyrant::putKeep</methodname></member>
     <member><methodname>TokyoTyrant::putCat</methodname></member>
    </simplelist>

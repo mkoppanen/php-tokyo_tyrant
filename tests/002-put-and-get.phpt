@@ -25,6 +25,10 @@ try {
 	echo "got exception\n";
 }
 
+$tt->put("test", "abc"); 
+$tt->putshl("test", "de", 4); 
+echo $tt->get("test") . "\n";
+
 $tt->vanish();
 $tt->putkeep('test_key', 'xxxxx');
 echo $tt->get('test_key') . "\n";
@@ -33,4 +37,5 @@ echo $tt->get('test_key') . "\n";
 data
 data more data
 got exception
+bcde
 xxxxx

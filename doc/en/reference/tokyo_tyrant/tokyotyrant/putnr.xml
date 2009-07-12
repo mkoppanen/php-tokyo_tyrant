@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<refentry xml:id="tokyotyrant.put" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<refentry xml:id="tokyotyrant.putnr" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>TokyoTyrant::put</refname>
-  <refpurpose>Puts values</refpurpose>
+  <refname>TokyoTyrant::putNr</refname>
+  <refpurpose>Puts value</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>TokyoTyrant</type><methodname>TokyoTyrant::put</methodname>
+   <modifier>public</modifier> <type>TokyoTyrant</type><methodname>TokyoTyrant::putNr</methodname>
    <methodparam><type>mixed</type><parameter>keys</parameter></methodparam>
    <methodparam choice="opt"><type>string</type><parameter>value</parameter></methodparam>
   </methodsynopsis>
   <para>
    Puts a key-value pair into the database or multiple key-value pairs. If <parameter>keys</parameter> is
    string then the second parameter value defines the value. 
-   The second parameter is mandatory if <parameter>keys</parameter> is a string. If the key exists the value
-   will be replaced with new value.
+   The second parameter is mandatory if <parameter>keys</parameter> is a string. This method does not wait
+   for the response from the server.
   </para>
  </refsect1>
 
@@ -57,7 +57,7 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><methodname>TokyoTyrant::put</methodname> example</title>
+    <title><methodname>TokyoTyrant::putNr</methodname> example</title>
     <programlisting role="php">
 <![CDATA[
 <?php
@@ -65,20 +65,20 @@
 $tt = new TokyoTyrant("localhost");
 
 /* Put single key-value pair */
-$tt->put("key", "value");
+$tt->putNr("key", "value");
 
-/* Put key-value pairs, new value overwrites the old */
-$tt->put(array("key1" => "value1", "key" => "value2"));
+/* Put key-value pairs */
+$tt->putNr(array("key1" => "value1", "key2" => "value2"));
 
 /* Get back one key */
-echo $tt->get("key");
+echo $tt->get("key1");
 ?>
 ]]>
     </programlisting>
     &example.outputs;
     <screen>
 <![CDATA[
-value2
+value1
 ]]>
     </screen>
    </example>
@@ -89,6 +89,7 @@ value2
   &reftitle.seealso;
   <para>
    <simplelist>
+    <member><methodname>TokyoTyrant::putNr</methodname></member>
     <member><methodname>TokyoTyrant::putKeep</methodname></member>
     <member><methodname>TokyoTyrant::putCat</methodname></member>
    </simplelist>
