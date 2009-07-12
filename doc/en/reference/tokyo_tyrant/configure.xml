@@ -48,6 +48,9 @@
     </simplelist>
     The checksum contains SHA1 sum of the node id, primary key, session id and the salt which is known only on the server side. This allows quick mapping of session id to node and primary key since there is no need to do an additional search. During session id regeneration only the parts 1 and 2 change but the mapping to the node and primary key stays constant.
   </para>
+  <para>
+   In case some of the nodes fail <link linkend="ini.tokyo-tyrant.allow-failover">tokyo_tyrant.allow_failover</link>, <link linkend="ini.tokyo-tyrant.fail-threshold">tokyo_tyrant.fail_threshold</link> and <link linkend="ini.tokyo-tyrant.health-check-divisor">tokyo_tyrant.health_check_divisor</link> INI-settings control the behavior during failover. If failover is allowed the session handler will map the session to a healthy node and creates a new empty session.
+  </para>
  </section>
 
 </section>
