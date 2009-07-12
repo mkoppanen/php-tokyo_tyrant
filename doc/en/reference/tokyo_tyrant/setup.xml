@@ -15,24 +15,24 @@
  <!-- {{{ Installation -->
  <section xml:id="tokyo-tyrant.installation">
   &reftitle.install;
-  &no.install;
+  &reference.tokyo-tyrant.configure;
  </section>
- <!-- or &reference.tokyo_tyrant.configure; -->
+ <!-- or &reference.tokyo-tyrant.configure; -->
  <!-- }}} -->
 
  <!-- {{{ Configuration -->
  <section xml:id="tokyo-tyrant.configuration">
   &reftitle.runtime;
-  &no.config;
+  &reference.tokyo-tyrant.ini;
  </section>
- <!-- or &reference.tokyo_tyrant.ini; -->
+ <!-- or  -->
  <!-- }}} -->
 
  <section xml:id="tokyo-tyrant.resources">
   &reftitle.resources;
   <!-- Use &no.resource; if there no resources -->
   <para>
-   Mention the resource here.
+   &no.resource;
   </para>
  </section>
 
