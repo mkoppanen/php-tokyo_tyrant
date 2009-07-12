@@ -4,7 +4,9 @@
 <reference xml:id="ref.tokyo-tyrant" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <title>tokyo_tyrant &Functions;</title>
 
- &reference.tokyo-tyrant.entities.functions;
+ &reference.tokyo-tyrant.entities.tokyotyrant;
+ &reference.tokyo-tyrant.entities.tokyotyrantquery;
+ &reference.tokyo-tyrant.entities.tokyotyranttable;
 
 </reference>
 
