@@ -17,10 +17,10 @@ echo $tt->get("key");
 ?>
 ]]>
   </programlisting>
-  &example.outputs.similar;
+  &example.outputs;
   <screen>
 <![CDATA[
-...
+value
 ]]>
   </screen>
  </example>
