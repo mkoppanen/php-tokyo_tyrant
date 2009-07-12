@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<section xml:id="tokyo_tyrant.configuration" xmlns="http://docbook.org/ns/docbook">
+<section xml:id="tokyo-tyrant.configuration" xmlns="http://docbook.org/ns/docbook">
  &reftitle.runtime;
  &extension.runtime;
  <para>

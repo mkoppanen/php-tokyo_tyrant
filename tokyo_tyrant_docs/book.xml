@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<book xml:id="book.tokyo_tyrant" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Tokyo_tyrant</title>
- <titleabbrev>Tokyo_tyrant</titleabbrev>
+<book xml:id="book.tokyo-tyrant" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>tokyo_tyrant</title>
+ <titleabbrev>tokyo_tyrant</titleabbrev>
 
  <preface xml:id="intro.tokyo_tyrant">
   &reftitle.intro;
   <para>
-   Tokyo Tyrant extension allows connections to remote Tokyo Tyrant databases.
+   tokyo_tyrant extension allows connections to remote Tokyo Tyrant databases.
   </para>
  </preface>
 
- &reference.tokyo_tyrant.setup;
- &reference.tokyo_tyrant.constants;
- &reference.tokyo_tyrant.examples;
- &reference.tokyo_tyrant.reference;
+ &reference.tokyo-tyrant.setup;
+ &reference.tokyo-tyrant.constants;
+ &reference.tokyo-tyrant.examples;
+ &reference.tokyo-tyrant.reference;
 
 </book>
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<reference xml:id="ref.tokyo_tyrant" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
- <title>Tokyo_tyrant &Functions;</title>
+<reference xml:id="ref.tokyo-tyrant" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>tokyo_tyrant &Functions;</title>
 
  &reference.tokyo_tyrant.entities.functions;
 

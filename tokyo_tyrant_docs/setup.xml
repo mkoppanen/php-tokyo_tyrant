@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- $Revision: $ -->
 
-<chapter xml:id="tokyo_tyrant.setup" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
+<chapter xml:id="tokyo-tyrant.setup" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  &reftitle.setup;
 
- <section xml:id="tokyo_tyrant.requirements">
+ <section xml:id="tokyo-tyrant.requirements">
   &reftitle.required;
   <!-- Use &no.requirement; if there no requirement -->
   <para>
@@ -13,7 +13,7 @@
  </section>
 
  <!-- {{{ Installation -->
- <section xml:id="tokyo_tyrant.installation">
+ <section xml:id="tokyo-tyrant.installation">
   &reftitle.install;
   &no.install;
  </section>
@@ -21,14 +21,14 @@
  <!-- }}} -->
 
  <!-- {{{ Configuration -->
- <section xml:id="tokyo_tyrant.configuration">
+ <section xml:id="tokyo-tyrant.configuration">
   &reftitle.runtime;
   &no.config;
  </section>
  <!-- or &reference.tokyo_tyrant.ini; -->
  <!-- }}} -->
 
- <section xml:id="tokyo_tyrant.resources">
+ <section xml:id="tokyo-tyrant.resources">
   &reftitle.resources;
   <!-- Use &no.resource; if there no resources -->
   <para>
