@@ -18,10 +18,6 @@
 #include "php_tokyo_tyrant_session.h"
 #include "ext/standard/php_rand.h"
 
-#ifndef HAVE_UINT64_T
-typedef unsigned long long int uint64_t
-#endif
-
 long php_tt_server_fail(int op, char *host, int port TSRMLS_DC)
 {
     char *key = NULL;
