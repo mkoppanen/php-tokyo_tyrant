@@ -1683,7 +1683,7 @@ PHP_MINFO_FUNCTION(tokyo_tyrant)
 zend_module_entry tokyo_tyrant_module_entry =
 {
         STANDARD_MODULE_HEADER,
-        "tokyo_tyrant",
+        PHP_TOKYO_TYRANT_EXTNAME,
         tokyo_tyrant_functions,			/* Functions */
         PHP_MINIT(tokyo_tyrant),		/* MINIT */
         PHP_MSHUTDOWN(tokyo_tyrant),	/* MSHUTDOWN */
