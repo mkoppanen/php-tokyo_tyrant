@@ -48,7 +48,7 @@
  <refsect1 role="returnvalues">
   &reftitle.returnvalues;
   <para>
-   Description...
+   Returns the primary key on success and throws TokyoTyrantException on error
   </para>
  </refsect1>
 
