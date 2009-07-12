@@ -109,12 +109,21 @@ static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend
 	memset(host, '\0', 4096);
 	if (sscanf(key, "%s %d %lf", host, &port, &timeout) == 3) {
 		int value;
+		int64_t index;
 		TCRDB *rdb = tcrdbnew();
 		
 		value = tcrdbopen(rdb, host, port);
-		tcrdbdel(rdb);
-
+		
 		if (!value) {
+			efree(key);
+			tcrdbdel(rdb);
+			return ZEND_HASH_APPLY_KEEP;
+		}
+		
+		index = tcrdbtblgenuid(rdb);
+		tcrdbdel(rdb);
+		
+		if (index == -1) {
 			efree(key);
 			return ZEND_HASH_APPLY_KEEP;
 		}

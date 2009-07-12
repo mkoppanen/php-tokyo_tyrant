@@ -12,6 +12,11 @@
    contains the normal key-value API and the table API.
   </para>
   <para>
+   <literal>
+    "Tokyo Tyrant is a package of network interface to the DBM called Tokyo Cabinet. Though the DBM has high performance, you might bother in case that multiple processes share the same database, or remote processes access the database. Thus, Tokyo Tyrant is provided for concurrent and remote connections to Tokyo Cabinet. It is composed of the server process managing a database and its access library for client applications." --Tokyo Tyrant documentation
+   </literal>
+  </para>
+  <para>
    Tokyo Tyrant is written by Mikio Hirabayashi and is licensed under GNU Lesser General Public License.
   </para>
  </preface>
