@@ -3,14 +3,14 @@
 
 <refentry xml:id="tokyotyrant.fwmkeys" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>TokyoTyrant::fwmkeys</refname>
+  <refname>TokyoTyrant::fwmKeys</refname>
   <refpurpose>Returns the forward matching keys</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>array</type><methodname>TokyoTyrant::fwmkeys</methodname>
+   <modifier>public</modifier> <type>array</type><methodname>TokyoTyrant::fwmKeys</methodname>
    <methodparam><type>string</type><parameter>prefix</parameter></methodparam>
    <methodparam><type>int</type><parameter>max_recs</parameter></methodparam>
   </methodsynopsis>
@@ -54,13 +54,13 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><methodname>TokyoTyrant::fwmkeys</methodname> example</title>
+    <title><methodname>TokyoTyrant::fwmKeys</methodname> example</title>
     <programlisting role="php">
 <![CDATA[
 <?php
 $tt = new TokyoTyrant();
 $tt->connect("localhost", 1978);
-var_dump($tt->fwmkeys("key_", 10));
+var_dump($tt->fwmKeys("key_", 10));
 ?>
 ]]>
     </programlisting>

@@ -14,6 +14,42 @@
   <link xlink:href="&url.pecl.win.ext;php_tokyo_tyrant.dll">php_tokyo_tyrant.dll</link> -->
  </para>
 
+ <section xml:id="tokyo-tyrant.session-running">
+  <title>Running Tokyo Tyrant for the session handler</title>
+  <para>
+   <literal>ttserver -port 2000 -ext /path/to/expire.lua -extpc expire 30.0 '/tmp/sessions.tct#idx=ts:dec'</literal>
+  </para>
+ </section>
+
+ <section xml:id="tokyo-tyrant.configuring-session-handler">
+  <title>Configuring session handler</title>
+  <para>
+    <simplelist>
+     <member>tokyo_tyrant.session_salt="randomlongstring"</member>
+     <member>session.save_handler=tokyo_tyrant</member>
+     <member>session.save_path="tcp://hostname1:2000,tcp://hostname2:2000"</member>
+    </simplelist>
+  </para>
+  <para>
+   It is important to make sure that session_salt matches on all servers
+  </para>
+ </section>
+
+ <section xml:id="tokyo-tyrant.how-session-handler-works">
+  <title>How it works?</title>
+  <para>
+    The session handler creates a session id like the following:
+    8b0e27a823fa4a6cf7246945b82c1d51-a5eadbbed1f2075952900628456bfd6830541629-0-5460
+    <simplelist>
+     <member>1. Random session id</member>
+     <member>2. Checksum</member>
+     <member>3. Node id</member>
+     <member>4. Primary key</member>
+    </simplelist>
+    The checksum contains SHA1 sum of the node id, primary key, session id and the salt which is known only on the server side. This allows quick mapping of session id to node and primary key since there is no need to do an additional search. During session id regeneration only the parts 1 and 2 change but the mapping to the node and primary key stays constant.
+  </para>
+ </section>
+
 </section>
 
 

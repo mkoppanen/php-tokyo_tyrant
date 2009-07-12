@@ -3,14 +3,14 @@
 
 <refentry xml:id="tokyotyrant.size" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
-  <refname>tokyotyrant::size</refname>
+  <refname>TokyoTyrant::size</refname>
   <refpurpose>Returns the size of the value</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
   &reftitle.description;
   <methodsynopsis>
-   <modifier>public</modifier> <type>int</type><methodname>tokyotyrant::size</methodname>
+   <modifier>public</modifier> <type>int</type><methodname>TokyoTyrant::size</methodname>
    <methodparam><type>string</type><parameter>key</parameter></methodparam>
   </methodsynopsis>
   <para>
@@ -45,7 +45,7 @@
   &reftitle.examples;
   <para>
    <example>
-    <title><methodname>tokyotyrant::size</methodname> example</title>
+    <title><methodname>TokyoTyrant::size</methodname> example</title>
     <programlisting role="php">
 <![CDATA[
 <?php
