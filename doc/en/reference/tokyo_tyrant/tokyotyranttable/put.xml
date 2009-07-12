@@ -4,7 +4,7 @@
 <refentry xml:id="tokyotyranttable.put" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink">
  <refnamediv>
   <refname>TokyoTyrantTable::put</refname>
-  <refpurpose>The put purpose</refpurpose>
+  <refpurpose>Store a row</refpurpose>
  </refnamediv>
 
  <refsect1 role="description">
