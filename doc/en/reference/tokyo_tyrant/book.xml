@@ -5,7 +5,7 @@
  <title>tokyo_tyrant</title>
  <titleabbrev>tokyo_tyrant</titleabbrev>
 
- <preface xml:id="intro.tokyo_tyrant">
+ <preface xml:id="intro.tokyo-tyrant">
   &reftitle.intro;
   <para>
    tokyo_tyrant extension allows connections to remote Tokyo Tyrant databases.
