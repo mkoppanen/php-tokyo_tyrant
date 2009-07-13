@@ -81,7 +81,7 @@ dnl Tokyo Cabinet header
     AC_DEFINE(HAVE_PHP_TOKYO_TYRANT_SESSION,1,[ ])
     TOKYO_EXT_FILES="${TOKYO_EXT_FILES} session_funcs.c server_pool.c failover.c session.c"
   fi
- 
+
   PHP_NEW_EXTENSION(tokyo_tyrant, $TOKYO_EXT_FILES, $ext_shared)
   AC_DEFINE(HAVE_PHP_TOKYO_TYRANT,1,[ ])
 fi

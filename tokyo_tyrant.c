@@ -21,14 +21,11 @@
 #include "php_tokyo_tyrant_funcs.h"
 #include "php_tokyo_tyrant_connection.h"
 
-
 #include "SAPI.h" 
 #include "php_variables.h"
 #include "ext/standard/info.h"
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_interfaces.h"
-
-#include <math.h>
 
 zend_class_entry *php_tokyo_tyrant_sc_entry;
 zend_class_entry *php_tokyo_tyrant_table_sc_entry;
