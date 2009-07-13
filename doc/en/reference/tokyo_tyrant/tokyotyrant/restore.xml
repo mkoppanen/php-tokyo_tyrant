@@ -16,8 +16,13 @@
    <methodparam choice="opt"><type>bool</type><parameter>check_consistency</parameter></methodparam>
   </methodsynopsis>
   <para>
-   Restore the database from the update log
+   Restore the database from the update log.
   </para>
+  <warning>
+   <simpara>
+    This method is not supported on 32bit platforms.
+   </simpara>
+  </warning>
  </refsect1>
 
  <refsect1 role="parameters">

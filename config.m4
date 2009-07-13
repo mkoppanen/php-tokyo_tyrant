@@ -9,6 +9,22 @@ PHP_ARG_ENABLE(tokyo-tyrant-session, whether to enable tokyo tyrant session hand
 
 if test "$PHP_TOKYO_TYRANT" != "no"; then
 
+dnl Check PHP version
+  AC_MSG_CHECKING(if PHP version is at least 5.2.0)
+  PHP_TT_VERSION=`$PHP_CONFIG --version`; 
+  PHP_TT_VERNUM=`$PHP_CONFIG --vernum`;
+
+  if test $PHP_TT_VERNUM -ge 50200; then
+    AC_MSG_RESULT(found version $PHP_TT_VERSION)
+  else
+    AC_MSG_ERROR(no. You need at least PHP version 5.2.0 to use tokyo_tyrant.)
+  fi
+
+dnl Add dependency to date extension if PHP >= 5.3.0 is used
+  if test $PHP_TT_VERNUM -ge 50300; then
+    PHP_ADD_EXTENSION_DEP(tokyo_tyrant, date)
+  fi
+
 dnl Tokyo Tyrant parts
 
   AC_MSG_CHECKING(for tcrdb.h)

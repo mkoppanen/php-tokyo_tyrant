@@ -27,6 +27,10 @@
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_interfaces.h"
 
+#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
+# include "ext/date/php_date.h"
+#endif
+
 zend_class_entry *php_tokyo_tyrant_sc_entry;
 zend_class_entry *php_tokyo_tyrant_table_sc_entry;
 zend_class_entry *php_tokyo_tyrant_query_sc_entry;
@@ -656,6 +660,74 @@ PHP_METHOD(tokyotyrant, copy)
 }
 /* }}} */
 
+#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
+static uint_fast64_t _php_tt_get_ts(zval *date_param TSRMLS_DC) 
+{
+	zval *fname, retval, *params[1];
+	
+	MAKE_STD_ZVAL(fname);
+	ZVAL_STRING(fname, "date_timestamp_get", 1);
+
+	params[0] = date_param;
+
+	call_user_function(EG(function_table), NULL, fname, &retval, 1, params TSRMLS_CC);
+	zval_dtor(fname);
+	FREE_ZVAL(fname);
+
+	if (Z_TYPE(retval) == IS_BOOL && !Z_BVAL(retval)) {
+		return 0;
+	}
+
+	/* Microseconds */
+	return (Z_LVAL(retval) * 1000);
+}
+
+/* {{{ TokyoTyrant TokyoTyrant::restore(string log_dir, mixed timestamp[, bool check_consistency = true]);
+	restore the database
+*/
+PHP_METHOD(tokyotyrant, restore)
+{
+	zval *date_param;
+	php_tokyo_tyrant_object *intern;
+	char *path;
+	int path_len, opts;
+	uint_fast64_t ts;
+	zend_bool check_consistency = 1;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|b", &path, &path_len, &date_param, &check_consistency) == FAILURE) {
+		return;
+	}
+#if !defined(__LP64__) && !defined(__ILP64__)
+	PHP_TOKYO_TYRANT_EXCEPTION_MSG("TokyoTyrant::restore is not supported on a 32bit platform");
+#endif
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	if (Z_TYPE_P(date_param) == IS_OBJECT) {
+		zend_class_entry *date_ce_date = php_date_get_date_ce();
+		if (!instanceof_function_ex(Z_OBJCE_P(date_param), date_ce_date, 0 TSRMLS_CC)) { 
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The timestamp parameter must be instanceof DateTime");
+		}
+
+		ts = _php_tt_get_ts(date_param TSRMLS_CC);
+		if (ts == 0) {
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Failed to get timestamp from the DateTime object");
+		}
+	} else {
+		convert_to_long(date_param);
+		ts = Z_LVAL_P(date_param);
+	}
+	
+	if (check_consistency) {
+		opts |= RDBROCHKCON;
+	}
+
+	if (!tcrdbrestore(intern->conn->rdb, path, ts, opts)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to restore the database: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+#else 
 /* {{{ TokyoTyrant TokyoTyrant::restore(string log_dir, int timestamp[, bool check_consistency = true]);
 	restore the database
 */
@@ -663,13 +735,16 @@ PHP_METHOD(tokyotyrant, restore)
 {
 	php_tokyo_tyrant_object *intern;
 	char *path;
-	int path_len;
-	long ts, opts;
+	int path_len, opts;
+	uint_fast64_t ts;
 	zend_bool check_consistency = 1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &path, &path_len, &ts, &check_consistency) == FAILURE) {
 		return;
 	}
+#if !defined(__LP64__) && !defined(__ILP64__)
+	PHP_TOKYO_TYRANT_EXCEPTION_MSG("TokyoTyrant::restore is not supported on a 32bit platform");
+#endif	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (check_consistency) {
@@ -682,7 +757,59 @@ PHP_METHOD(tokyotyrant, restore)
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
+#endif
 
+#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
+/* {{{ TokyoTyrant TokyoTyrant::setMaster(string host, int port, mixed timestamp[, zend_bool check_consistency]);
+	Set the master
+*/
+PHP_METHOD(tokyotyrant, setmaster)
+{
+	zval *date_param;
+	php_tokyo_tyrant_object *intern;
+	char *host;
+	int host_len, code, opts;
+	long port;
+	uint_fast64_t ts;
+	zend_bool check_consistency = 1;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz|b", &host, &host_len, &port, &date_param, &check_consistency) == FAILURE) {
+		return;
+	}
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+
+	if (Z_TYPE_P(date_param) == IS_OBJECT) {
+		zend_class_entry *date_ce_date = php_date_get_date_ce();
+		if (!instanceof_function_ex(Z_OBJCE_P(date_param), date_ce_date, 0 TSRMLS_CC)) { 
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The timestamp parameter must be instanceof DateTime");
+		}
+
+		ts = _php_tt_get_ts(date_param TSRMLS_CC);
+		if (ts == 0) {
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Failed to get timestamp from the DateTime object");
+		}
+	} else {
+		convert_to_long(date_param);
+		ts = Z_LVAL_P(date_param);
+	}
+
+	if (check_consistency) {
+		opts |= RDBROCHKCON;
+	}
+	
+	if (host_len == 0) {
+		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, ts, opts);
+	} else {
+		code = tcrdbsetmst(intern->conn->rdb, host, port, ts, opts);
+	}
+	
+	if (!code) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set the master: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+#else
 /* {{{ TokyoTyrant TokyoTyrant::setMaster(string host, int port, int timestamp[, zend_bool check_consistency]);
 	Set the master
 */
@@ -715,6 +842,7 @@ PHP_METHOD(tokyotyrant, setmaster)
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
+#endif
 
 /** -------- Begin table api -------- **/
 

@@ -27,12 +27,16 @@ Example entries:
  <function name='tokyotyrant::put' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyrant::putkeep' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyrant::putcat' from='PECL tokyo_tyrant &gt;= Unknown'/>
+ <function name='tokyotyrant::putnr' from='PECL tokyo_tyrant &gt;= Unknown'/>
+ <function name='tokyotyrant::putshl' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyrant::get' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyrant::out' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyrant::add' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::put' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::putkeep' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::putcat' from='PECL tokyo_tyrant &gt;= Unknown'/>
+ <function name='tokyotyranttable::putnr' from='PECL tokyo_tyrant &gt;= Unknown'/>
+ <function name='tokyotyranttable::putshl' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::get' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::out' from='PECL tokyo_tyrant &gt;= Unknown'/>
  <function name='tokyotyranttable::add' from='PECL tokyo_tyrant &gt;= Unknown'/>
