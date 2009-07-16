@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" packagerversion="1.4.7" version="2.0" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+	<name>tokyo_tyrant</name>
+	<channel>pecl.php.net</channel>
+	<summary>Provides a wrapper to the Tokyo Tyrant client library.</summary>
+<description>
+tokyo_tyrant extension provides object oriented API for communicating
+with Tokyo Tyrant key-value store.
+
+This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
+</description>
+	<lead>
+		<name>Mikko Koppanen</name>
+		<user>mkoppanen</user>
+		<email>mkoppanen@php.net</email>
+		<active>yes</active>
+	</lead>
+	<date>2009-07-16</date>
+	<version>
+		<release>0.0.9</release>
+		<api>0.0.9</api>
+	</version>
+	<stability>
+		<release>beta</release>
+		<api>beta</api>
+	</stability>
+	<license uri="http://www.php.net/license">PHP License</license>
+<notes>
+- Initial release
+</notes>
+	<contents>
+		<dir name="/">
+			<!-- config -->
+			<file name="config.m4" role="src" />
+			
+			<!-- source files -->
+			<file name="connection.c" role="src" />
+			<file name="failover.c" role="src" />
+			<file name="server_pool.c" role="src" />
+			<file name="session.c" role="src" />
+			<file name="session_funcs.c" role="src" />
+			<file name="tokyo_tyrant.c" role="src" />
+			<file name="tokyo_tyrant_funcs.c" role="src" />
+			
+			<!-- headers -->
+			<file name="php_tokyo_tyrant.h" role="src" />
+			<file name="php_tokyo_tyrant_connection.h" role="src" />
+			<file name="php_tokyo_tyrant_failover.h" role="src" />
+			<file name="php_tokyo_tyrant_funcs.h" role="src" />
+			<file name="php_tokyo_tyrant_private.h" role="src" />
+			<file name="php_tokyo_tyrant_server_pool.h" role="src" />
+			<file name="php_tokyo_tyrant_session.h" role="src" />
+			<file name="php_tokyo_tyrant_session_funcs.h" role="src" />
+			
+			<file name="CREDITS" role="doc" />
+		</dir>
+	</contents>
+	<dependencies>
+		<required>
+			<php>
+				<min>5.2.0</min>
+			</php>
+			<pearinstaller>
+				<min>1.4.0</min>
+			</pearinstaller>
+		</required>
+	</dependencies>
+	<providesextension>tokyo_tyrant</providesextension>
+	<extsrcrelease>
+  		<configureoption default="autodetect" name="with-tokyo-tyrant" prompt="Please provide the prefix of Tokyo Tyrant installation" />
+		<configureoption default="autodetect" name="with-tokyo-cabinet-dir" prompt="Please provide the prefix of Tokyo Cabinet installation" />
+ 	</extsrcrelease>
+</package>
