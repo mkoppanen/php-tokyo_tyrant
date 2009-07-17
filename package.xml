@@ -51,7 +51,8 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 			<file name="php_tokyo_tyrant_server_pool.h" role="src" />
 			<file name="php_tokyo_tyrant_session.h" role="src" />
 			<file name="php_tokyo_tyrant_session_funcs.h" role="src" />
-			
+
+			<!-- extra files -->
 			<file name="CREDITS" role="doc" />
 		</dir>
 	</contents>
