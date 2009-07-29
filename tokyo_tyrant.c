@@ -901,7 +901,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	char *key = NULL, *kbuf;
 	int key_len = 0, new_len;
 	int code = 0;
-	long pk = NULL;
+	long pk = -1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!a", &key, &key_len, &keys) == FAILURE) {
 		return;
@@ -948,7 +948,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to store columns: %s");
 	}
 
-	if (pk) {
+	if (pk > 0) {
 		RETVAL_LONG(pk);
 	} else {
 		RETVAL_STRINGL(kbuf, new_len, 1);
