@@ -26,6 +26,10 @@ try {
 } catch (TokyoTyrantException $e) {
 	echo "got exception\n";
 }	
+
+$rec = $tt->put('foo', array('bar' => 'baz'));
+var_dump($rec);
+var_dump($tt->get($rec));
 	
 ?>
 --EXPECTF--
@@ -50,3 +54,8 @@ array(3) {
   string(8) "new item"
 }
 got exception
+string(3) "foo"
+array(1) {
+  ["bar"]=>
+  string(3) "baz"
+}
