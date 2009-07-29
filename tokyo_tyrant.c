@@ -898,7 +898,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	php_tokyo_tyrant_object *intern;
 	zval *keys;
 	TCMAP *map;
-	char *key = NULL, *kbuf;
+	char *key = NULL, *kbuf = NULL;
 	int key_len = 0, new_len;
 	int code = 0;
 	long pk = -1;
@@ -917,6 +917,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		if (pk == -1) {
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
 		}
+		memset(buf, 0, 256);
 		len = sprintf(buf, "%ld", pk);
 		kbuf = php_tt_prefix(buf, len, &new_len TSRMLS_CC);
 	}
@@ -945,19 +946,20 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	tcmapdel(map);
 
 	if (!code) {
+		efree(kbuf);
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to store columns: %s");
 	}
 
 	if (pk > 0) {
 		RETVAL_LONG(pk);
+		efree(kbuf);
 	} else {
-		RETVAL_STRINGL(kbuf, new_len, 1);
+		RETVAL_STRINGL(kbuf, new_len, 0);
 	}
-	efree(kbuf);
 	return;
 }
 
-/* {{{ int TokyoTyrantTable::put(int pk, array row);
+/* {{{ int TokyoTyrantTable::put(string pk, array row);
 	put a row. if pk = null new key is generated
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
@@ -968,7 +970,7 @@ PHP_METHOD(tokyotyranttable, put)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::putkeep(int pk, array row);
+/* {{{ int TokyoTyrantTable::putkeep(string pk, array row);
 	put a row
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
@@ -979,7 +981,7 @@ PHP_METHOD(tokyotyranttable, putkeep)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::putcat(int pk, array row);
+/* {{{ int TokyoTyrantTable::putcat(string pk, array row);
 	put a row
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
