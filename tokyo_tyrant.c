@@ -1147,6 +1147,27 @@ PHP_METHOD(tokyotyrantquery, addcond)
 }
 /* }}} */
 
+
+#if PHP_TOKYO_TYRANT_VERSION >= 1001033
+/* {{{ string TokyoTyrantQuery::hint();
+	Get the hint string of a query object
+*/
+PHP_METHOD(tokyotyrantquery, hint) 
+{
+	php_tokyo_tyrant_query_object *intern;
+	const char *hint;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_QUERY_OBJECT;
+	hint = tcrdbqryhint(intern->qry);
+	RETURN_STRING((char *)hint, 1);
+}
+/* }}} */
+#endif
+
 /* {{{ array TokyoTyrantQuery::search();
 	Executes a search query and returns results
 */
@@ -1515,6 +1536,9 @@ static function_entry php_tokyo_tyrant_query_class_methods[] =
 	PHP_ME(tokyotyrantquery, setlimit,		tokyo_tyrant_query_setlimit_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+#if PHP_TOKYO_TYRANT_VERSION >= 1001033
+	PHP_ME(tokyotyrantquery, hint,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+#endif
 	
 	PHP_ME(tokyotyrantquery, key,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, next,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
