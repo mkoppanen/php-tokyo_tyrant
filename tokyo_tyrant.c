@@ -1109,26 +1109,35 @@ PHP_METHOD(tokyotyrantquery, __construct)
 }
 /* }}} */
 
-/* {{{ string TokyoTyrantQuery::setLimit(int max[, int skip]);
+/* {{{ string TokyoTyrantQuery::setLimit([int max, int skip]);
 	Set the limit on the query
 */
 PHP_METHOD(tokyotyrantquery, setlimit) 
 {
 	php_tokyo_tyrant_query_object *intern;
-	long max = NULL, skip = NULL;
+	zval *max = NULL, *skip = NULL;
+	long l_max, l_skip;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|l", &max, &skip) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!", &max, &skip) == FAILURE) {
 		return;
 	}
-	
 	intern = PHP_TOKYO_QUERY_OBJECT;
+	
 	if (!max) {
-		max = -1;
+		l_max = -1;
+	} else {
+		convert_to_long(max);
+		l_max = Z_LVAL_P(max);
 	}
+
 	if (!skip) {
-		skip = -1;
+		l_skip = -1;
+	} else {
+		convert_to_long(skip);
+		l_skip = Z_LVAL_P(skip);
 	}
-	tcrdbqrysetlimit(intern->qry, max, skip);
+
+	tcrdbqrysetlimit(intern->qry, l_max, l_skip);
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
