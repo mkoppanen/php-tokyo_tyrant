@@ -1562,22 +1562,26 @@ static void php_tokyo_tyrant_query_object_free_storage(void *object TSRMLS_DC)
 		return;
 	}
 	
+	if (intern->parent) {
+	
 #ifdef Z_REFCOUNT_P
-	Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
-	if (Z_REFCOUNT_P(intern->parent) <= 0) {
+		Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
+		if (Z_REFCOUNT_P(intern->parent) <= 0) {
 #else
-	intern->parent->refcount--; 
-	if (intern->parent->refcount == 0) {
+		intern->parent->refcount--; 
+		if (intern->parent->refcount == 0) {
 #endif		
-	 /* TODO: check if this leaks */
-		efree(intern->parent);
+	 	/* TODO: check if this leaks */
+			efree(intern->parent);
+		}
 	}
 	
 	if (intern->res) {
 		tclistdel(intern->res);
 	}
 
-	tcrdbqrydel(intern->qry);
+	if (intern->qry)
+		tcrdbqrydel(intern->qry);
 
 	zend_object_std_dtor(&intern->zo TSRMLS_CC);
 	efree(intern);
@@ -1594,6 +1598,9 @@ static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *cla
 	memset(&intern->zo, 0, sizeof(zend_object));
 
 	intern->executed = 0;
+	intern->qry    = NULL;
+	intern->res    = NULL;
+	intern->parent = NULL;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
 	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
