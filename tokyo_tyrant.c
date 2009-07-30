@@ -1115,15 +1115,41 @@ PHP_METHOD(tokyotyrantquery, __construct)
 PHP_METHOD(tokyotyrantquery, setlimit) 
 {
 	php_tokyo_tyrant_query_object *intern;
-	long max = 0, skip = 0;
+	long max = NULL, skip = NULL;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|l", &max, &skip) == FAILURE) {
 		return;
 	}
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
-	
+	if (!max) {
+		max = -1;
+	}
+	if (!skip) {
+		skip = -1;
+	}
 	tcrdbqrysetlimit(intern->qry, max, skip);
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+
+/* {{{ string TokyoTyrantQuery::setOrder(string name, int type);
+	Set the order of a query
+*/
+PHP_METHOD(tokyotyrantquery, setorder)
+{
+	php_tokyo_tyrant_query_object *intern;
+	char *name;
+	int name_len;
+	long type;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &name, &name_len, &type) == FAILURE) {
+		return;
+	}
+
+	intern = PHP_TOKYO_QUERY_OBJECT;
+
+	tcrdbqrysetorder(intern->qry, name, type);
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
@@ -1516,7 +1542,7 @@ static function_entry php_tokyo_tyrant_table_class_methods[] =
 	{NULL, NULL, NULL}
 };
 
-ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_construct_args, 0, 0, 2)
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_construct_args, 0, 0, 1)
 	ZEND_ARG_OBJ_INFO(0, TokyoTyrantTable, TokyoTyrantTable, 0) 
 ZEND_END_ARG_INFO()
 
@@ -1531,11 +1557,17 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_setlimit_args, 0, 0, 1)
 	ZEND_ARG_INFO(0, skip)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_setorder_args, 0, 0, 2)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, type)
+ZEND_END_ARG_INFO()
+
 static function_entry php_tokyo_tyrant_query_class_methods[] =
 {
 	PHP_ME(tokyotyrantquery, __construct,	tokyo_tyrant_query_construct_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, addcond,		tokyo_tyrant_query_addcond_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, setlimit,		tokyo_tyrant_query_setlimit_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, setorder,		tokyo_tyrant_query_setorder_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 #if PHP_TOKYO_TYRANT_VERSION >= 1001033

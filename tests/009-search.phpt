@@ -1,5 +1,5 @@
 --TEST--
-Table put variations
+Table search variations
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
@@ -32,7 +32,32 @@ $query->addCond('test', TokyoTyrant::RDBQC_STREW, '111');
 var_dump($query->search());
 
 echo "------------------\n";
-	
+
+$query->setLimit(null, null);
+var_dump($query->search());
+
+echo "------------------\n";
+
+$query->setLimit(1);
+var_dump($query->search());
+
+echo "------------------\n";
+
+$query->setLimit(1, 1);
+var_dump($query->search());
+
+echo "------------------\n";
+
+$query->setOrder('test', TokyoTyrant::RDBQO_STRDESC);
+var_dump($query->search());
+
+echo "------------------\n";
+
+$query->setOrder('test', TokyoTyrant::RDBQO_STRASC);
+var_dump($query->search());
+
+echo "------------------\n";
+
 ?>
 --EXPECTF--
 array(1) {
@@ -57,6 +82,51 @@ array(2) {
     ["test"]=>
     string(9) "abc123111"
   }
+  [2]=>
+  array(1) {
+    ["test"]=>
+    string(9) "cde456111"
+  }
+}
+------------------
+array(2) {
+  [1]=>
+  array(1) {
+    ["test"]=>
+    string(9) "abc123111"
+  }
+  [2]=>
+  array(1) {
+    ["test"]=>
+    string(9) "cde456111"
+  }
+}
+------------------
+array(1) {
+  [1]=>
+  array(1) {
+    ["test"]=>
+    string(9) "abc123111"
+  }
+}
+------------------
+array(1) {
+  [2]=>
+  array(1) {
+    ["test"]=>
+    string(9) "cde456111"
+  }
+}
+------------------
+array(1) {
+  [1]=>
+  array(1) {
+    ["test"]=>
+    string(9) "abc123111"
+  }
+}
+------------------
+array(1) {
   [2]=>
   array(1) {
     ["test"]=>
