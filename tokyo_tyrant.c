@@ -1137,8 +1137,7 @@ PHP_METHOD(tokyotyrantquery, setlimit)
 	} else {
 		if (Z_TYPE_P(skip) != IS_LONG) {
 			convert_to_long(skip);
-		}		
-		convert_to_long(skip);
+		}
 		l_skip = Z_LVAL_P(skip);
 	}
 
