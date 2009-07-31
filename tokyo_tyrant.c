@@ -1561,7 +1561,7 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_addcond_args, 0, 0, 3)
 	ZEND_ARG_INFO(0, expr)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_setlimit_args, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_setlimit_args, 0, 0, 0)
 	ZEND_ARG_INFO(0, max)
 	ZEND_ARG_INFO(0, skip)
 ZEND_END_ARG_INFO()
