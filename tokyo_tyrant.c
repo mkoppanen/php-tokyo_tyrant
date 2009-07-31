@@ -1126,13 +1126,18 @@ PHP_METHOD(tokyotyrantquery, setlimit)
 	if (!max) {
 		l_max = -1;
 	} else {
-		convert_to_long(max);
+		if (Z_TYPE_P(max) != IS_LONG) {
+			convert_to_long(max);
+		}
 		l_max = Z_LVAL_P(max);
 	}
 
 	if (!skip) {
 		l_skip = -1;
 	} else {
+		if (Z_TYPE_P(skip) != IS_LONG) {
+			convert_to_long(skip);
+		}		
 		convert_to_long(skip);
 		l_skip = Z_LVAL_P(skip);
 	}
