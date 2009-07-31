@@ -531,7 +531,7 @@ PHP_METHOD(tokyotyrant, stat)
 		memset(k, '\0', 1024);
 		memset(v, '\0', 1024);
 
-		if (sscanf(ptr, "%s\t%s", k, v) != 2) {
+		if (sscanf(ptr, "%s %s", k, v) != 2) {
 			continue;
 		}
 		add_assoc_string(return_value, k, v, 1);
