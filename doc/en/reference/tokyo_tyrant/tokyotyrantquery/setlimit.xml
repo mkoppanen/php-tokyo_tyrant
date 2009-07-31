@@ -11,7 +11,7 @@
   &reftitle.description;
   <methodsynopsis>
    <modifier>public</modifier> <type>void</type><methodname>TokyoTyrantQuery::setLimit</methodname>
-   <methodparam><type>int</type><parameter>max</parameter></methodparam>
+   <methodparam choice="opt"><type>int</type><parameter>max</parameter></methodparam>
    <methodparam choice="opt"><type>int</type><parameter>skip</parameter></methodparam>
   </methodsynopsis>
   <para>
@@ -27,7 +27,7 @@
      <term><parameter>max</parameter></term>
      <listitem>
       <para>
-       Maximum amount of records
+       Maximum amount of records. Default: -1
       </para>
      </listitem>
     </varlistentry>
@@ -35,7 +35,7 @@
      <term><parameter>skip</parameter></term>
      <listitem>
       <para>
-       How many records to skip from the start. Default: 0
+       How many records to skip from the start. Default: -1
       </para>
      </listitem>
     </varlistentry>
