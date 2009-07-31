@@ -65,10 +65,12 @@ char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
 TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC) 
 {
 	HashPosition pos;
-	int buckets = zend_hash_num_elements(Z_ARRVAL_P(array));
-	TCMAP *map = tcmapnew2(buckets);
+	int buckets, new_len;
+	TCMAP *map;
 	char *kbuf;
-	int new_len;
+	
+	buckets = zend_hash_num_elements(Z_ARRVAL_P(array));
+	map     = tcmapnew2(buckets);
 	
 	if (!map) {
 		return NULL;
