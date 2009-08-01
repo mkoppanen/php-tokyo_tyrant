@@ -1207,6 +1207,73 @@ PHP_METHOD(tokyotyrantquery, hint)
 	RETURN_STRING((char *)hint, 1);
 }
 /* }}} */
+
+/* {{{ string TokyoTyrantQuery::metaSearch(array queries, int type);
+	Retrieve records with multiple query objects
+*/
+PHP_METHOD(tokyotyrantquery, metasearch) 
+{
+	php_tokyo_tyrant_query_object *intern;
+	zval *queries;
+	long type;
+	RDBQRY **qrys;
+	int num_qrys, i = 0;
+	TCLIST *res;
+	HashPosition pos;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "al", &queries, &type) == FAILURE) {
+		return;
+	}
+
+	/* Queries in array and self */
+	num_qrys = zend_hash_num_elements(Z_ARRVAL_P(queries)) + 1;
+	qrys     = emalloc(num_qrys * sizeof(RDBQRY *));
+	
+	/* Self is always the 'left-most' */
+	intern     = PHP_TOKYO_QUERY_OBJECT;
+	qrys[i++]  = intern->qry;
+	
+	for (zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(queries), &pos);
+		zend_hash_has_more_elements_ex(Z_ARRVAL_P(queries), &pos) == SUCCESS;
+		zend_hash_move_forward_ex(Z_ARRVAL_P(queries), &pos)) {
+
+		zval **ppzval;
+		zend_bool correct_type = 0;
+
+		if (zend_hash_get_current_data_ex(Z_ARRVAL_P(queries), (void**)&ppzval, &pos) == SUCCESS) {
+	
+			zval tmpcopy = **ppzval;
+			zval_copy_ctor(&tmpcopy);
+			INIT_PZVAL(&tmpcopy);
+
+			if (Z_TYPE(tmpcopy) == IS_OBJECT) {
+				if (instanceof_function_ex(Z_OBJCE(tmpcopy), php_tokyo_tyrant_query_sc_entry, 0 TSRMLS_CC)) { 
+					php_tokyo_tyrant_query_object *intern_query;
+					intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(&tmpcopy TSRMLS_CC);
+	
+					qrys[i++] = intern_query->qry;
+					correct_type = 1;
+				}
+			}
+			zval_dtor(&tmpcopy);
+		}
+		
+		if (!correct_type) {
+			efree(qrys);
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must contain only TokyoTyrantQuery instances");
+		}
+	}
+
+	res = tcrdbmetasearch(qrys, num_qrys, type);
+	efree(qrys);
+	
+	array_init(return_value);
+	php_tt_tclist_to_array(intern->conn->rdb, res, return_value TSRMLS_CC);
+	tclistdel(res);
+	
+	return;
+}
+/* }}} */
 #endif
 
 /* {{{ array TokyoTyrantQuery::search();
@@ -1575,6 +1642,11 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_setorder_args, 0, 0, 2)
 	ZEND_ARG_INFO(0, type)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_metasearch_args, 0, 0, 2)
+	ZEND_ARG_INFO(0, queries)
+	ZEND_ARG_INFO(0, type)
+ZEND_END_ARG_INFO()
+
 static function_entry php_tokyo_tyrant_query_class_methods[] =
 {
 	PHP_ME(tokyotyrantquery, __construct,	tokyo_tyrant_query_construct_args,	ZEND_ACC_PUBLIC)
@@ -1584,9 +1656,9 @@ static function_entry php_tokyo_tyrant_query_class_methods[] =
 	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 #if PHP_TOKYO_TYRANT_VERSION >= 1001033
-	PHP_ME(tokyotyrantquery, hint,		tokyo_tyrant_empty_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, hint,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, metasearch,	tokyo_tyrant_query_metasearch_args,	ZEND_ACC_PUBLIC)
 #endif
-	
 	PHP_ME(tokyotyrantquery, key,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, next,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, rewind,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
@@ -1784,8 +1856,12 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 #define TOKYO_REGISTER_CONST_LONG(const_name, value) \
 	zend_declare_class_constant_long(php_tokyo_tyrant_sc_entry, const_name, sizeof(const_name)-1, (long)value TSRMLS_CC);	
 	
-	TOKYO_REGISTER_CONST_LONG("DEFAULT_PORT", PHP_TOKYO_TYRANT_DEFAULT_PORT);
+	/* Non Tokyo Tyrant constants */
+	TOKYO_REGISTER_CONST_LONG("RDBDEF_PORT", PHP_TOKYO_TYRANT_DEFAULT_PORT);
+	TOKYO_REGISTER_CONST_LONG("RDBREC_INT", PHP_TOKYO_TYRANT_RECTYPE_INT);
+	TOKYO_REGISTER_CONST_LONG("RDBREC_DBL", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
 	
+	/* And the rest */
 	TOKYO_REGISTER_CONST_LONG("RDBQC_STREQ", RDBQCSTREQ); 		/* string is equal to */
 	TOKYO_REGISTER_CONST_LONG("RDBQC_STRINC", RDBQCSTRINC);		/* string is included in */
   	TOKYO_REGISTER_CONST_LONG("RDBQC_STRBW", RDBQCSTRBW);		/* string begins with */
@@ -1801,18 +1877,18 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMLE", RDBQCNUMLE);		/* number is less than or equal to */               
 	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMBT", RDBQCNUMBT);		/* number is between two tokens of */              
 	TOKYO_REGISTER_CONST_LONG("RDBQC_NUMOREQ", RDBQCNUMOREQ);	/* number is equal to at least one token in */     
-	TOKYO_REGISTER_CONST_LONG("RDBQC_NEGATE", RDBQCNEGATE);		/* negation flag */                                 
-	TOKYO_REGISTER_CONST_LONG("RDBQC_NOIDX", RDBQCNOIDX);		/* no index flag */ 
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NEGATE",  RDBQCNEGATE);	/* negation flag */                                 
+	TOKYO_REGISTER_CONST_LONG("RDBQC_NOIDX",   RDBQCNOIDX);		/* no index flag */ 
 
 #if PHP_TOKYO_TYRANT_VERSION >= 1001029
-	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSPH", RDBQCFTSPH);		/* full-text search with the phrase of */
-	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSAND", RDBQCFTSAND);		/* full-text search with all tokens in */
-	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSOR", RDBQCFTSOR);		/* full-text search with at least one token in */
-	TOKYO_REGISTER_CONST_LONG("RDBQC_FTSEX", RDBQCFTSEX);		/* full-text search with the compound expression of */
+	TOKYO_REGISTER_CONST_LONG("RDBQCFTS_PH",  RDBQCFTSPH);		/* full-text search with the phrase of */
+	TOKYO_REGISTER_CONST_LONG("RDBQCFTS_AND", RDBQCFTSAND);		/* full-text search with all tokens in */
+	TOKYO_REGISTER_CONST_LONG("RDBQCFTS_OR",  RDBQCFTSOR);		/* full-text search with at least one token in */
+	TOKYO_REGISTER_CONST_LONG("RDBQCFTS_EX",  RDBQCFTSEX);		/* full-text search with the compound expression of */
 #endif
 
-	TOKYO_REGISTER_CONST_LONG("RDBXO_LCKREC", RDBXOLCKREC);		/* record locking */
-	TOKYO_REGISTER_CONST_LONG("RDBXO_LCKGLB", RDBXOLCKGLB);		/* global locking */
+	TOKYO_REGISTER_CONST_LONG("RDBXOLCK_REC", RDBXOLCKREC);		/* record locking */
+	TOKYO_REGISTER_CONST_LONG("RDBXOLCK_GLB", RDBXOLCKGLB);		/* global locking */
 
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRASC", RDBQOSTRASC);		/* string ascending */
 	TOKYO_REGISTER_CONST_LONG("RDBQO_STRDESC", RDBQOSTRDESC);	/* string descending */
@@ -1827,16 +1903,19 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	
 	TOKYO_REGISTER_CONST_LONG("TTE_SUCCESS", TTESUCCESS);		/* success */
 	TOKYO_REGISTER_CONST_LONG("TTE_INVALID", TTEINVALID);		/* invalid operation */
-	TOKYO_REGISTER_CONST_LONG("TTE_NOHOST", TTENOHOST);			/* host not found */
+	TOKYO_REGISTER_CONST_LONG("TTE_NOHOST",  TTENOHOST);		/* host not found */
 	TOKYO_REGISTER_CONST_LONG("TTE_REFUSED", TTEREFUSED);		/* connection refused */
 	TOKYO_REGISTER_CONST_LONG("TTE_SEND", TTESEND);				/* send error */
 	TOKYO_REGISTER_CONST_LONG("TTE_RECV", TTERECV);				/* recv error */
 	TOKYO_REGISTER_CONST_LONG("TTE_KEEP", TTEKEEP);				/* existing record */
 	TOKYO_REGISTER_CONST_LONG("TTE_NOREC", TTENOREC);			/* no record found */
 	TOKYO_REGISTER_CONST_LONG("TTE_MISC", TTEMISC);				/* miscellaneous error */
-
-	TOKYO_REGISTER_CONST_LONG("RDB_RECINT", PHP_TOKYO_TYRANT_RECTYPE_INT);
-	TOKYO_REGISTER_CONST_LONG("RDB_RECDBL", PHP_TOKYO_TYRANT_RECTYPE_DOUBLE);
+	
+#if PHP_TOKYO_TYRANT_VERSION >= 1001033
+	TOKYO_REGISTER_CONST_LONG("RDBMS_UNION", RDBMSUNION);		/* union */            
+	TOKYO_REGISTER_CONST_LONG("RDBMS_ISECT", RDBMSISECT);		/* intersection */
+	TOKYO_REGISTER_CONST_LONG("RDBMS_DIFF", RDBMSDIFF);			/* difference */
+#endif
 	
 #undef TOKYO_REGISTER_CONST_LONG
 
