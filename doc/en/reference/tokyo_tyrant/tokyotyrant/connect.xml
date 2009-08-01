@@ -36,7 +36,7 @@
      <term><parameter>port</parameter></term>
      <listitem>
       <para>
-       The port. Default: 1979
+       The port. Default: 1978
       </para>
      </listitem>
     </varlistentry>
@@ -68,7 +68,7 @@
 <![CDATA[
 <?php
 $tt = new TokyoTyrant();
-$tt->connect("localhost", TokyoTyrant::DEFAULT_PORT)->put("test", "value");
+$tt->connect("localhost", TokyoTyrant::RDBDEF_PORT)->put("test", "value");
 ?>
 ]]>
     </programlisting>

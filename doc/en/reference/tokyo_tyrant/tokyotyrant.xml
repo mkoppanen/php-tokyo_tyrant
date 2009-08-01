@@ -35,7 +35,7 @@
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.DEFAULT_PORT">TokyoTyrant::DEFAULT_PORT</varname>
+     <varname linkend="tokyotyrant.constants.RDBDEF_PORT">TokyoTyrant::RDBDEF_PORT</varname>
      <initializer>1978</initializer>
     </fieldsynopsis>
     <fieldsynopsis>
@@ -198,55 +198,77 @@
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBQC_FTSPH">TokyoTyrant::RDBQC_FTSPH</varname>
+     <varname linkend="tokyotyrant.constants.RDBQCFTS_PH">TokyoTyrant::RDBQCFTS_PH</varname>
      <initializer>15</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBQC_FTSAND">TokyoTyrant::RDBQC_FTSAND</varname>
+     <varname linkend="tokyotyrant.constants.RDBQCFTS_AND">TokyoTyrant::RDBQCFTS_AND</varname>
      <initializer>16</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBQC_FTSOR">TokyoTyrant::RDBQC_FTSOR</varname>
+     <varname linkend="tokyotyrant.constants.RDBQCFTS_OR">TokyoTyrant::RDBQCFTS_OR</varname>
      <initializer>17</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBQC_FTSEX">TokyoTyrant::RDBQC_FTSEX</varname>
+     <varname linkend="tokyotyrant.constants.RDBQCFTS_EX">TokyoTyrant::RDBQCFTS_EX</varname>
      <initializer>18</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBXO_LCKREC">TokyoTyrant::RDBXO_LCKREC</varname>
+     <varname linkend="tokyotyrant.constants.RDBXOLCK_REC">TokyoTyrant::RDBXO_LCKREC</varname>
      <initializer>1</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDBXO_LCKGLB">TokyoTyrant::RDBXO_LCKGLB</varname>
+     <varname linkend="tokyotyrant.constants.RDBXOLCK_GLB">TokyoTyrant::RDBXOLCK_GLB</varname>
      <initializer>2</initializer>
     </fieldsynopsis>
 
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDB_RECINT">TokyoTyrant::RDB_RECINT</varname>
+     <varname linkend="tokyotyrant.constants.RDBREC_INT">TokyoTyrant::RDBREC_INT</varname>
      <initializer>1</initializer>
     </fieldsynopsis>
+
     <fieldsynopsis>
      <modifier>const</modifier>
      <type>integer</type>
-     <varname linkend="tokyotyrant.constants.RDB_RECDBL">TokyoTyrant::RDB_RECDBL</varname>
+     <varname linkend="tokyotyrant.constants.RDBREC_DBL">TokyoTyrant::RDBREC_DBL</varname>
+     <initializer>2</initializer>
+    </fieldsynopsis>
+
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>integer</type>
+     <varname linkend="tokyotyrant.constants.RDBMS_UNION">TokyoTyrant::RDBMS_UNION</varname>
+     <initializer>0</initializer>
+    </fieldsynopsis>
+
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>integer</type>
+     <varname linkend="tokyotyrant.constants.RDBMS_ISECT">TokyoTyrant::RDBMS_ISECT</varname>
+     <initializer>1</initializer>
+    </fieldsynopsis>
+
+    <fieldsynopsis>
+     <modifier>const</modifier>
+     <type>integer</type>
+     <varname linkend="tokyotyrant.constants.RDBMS_DIFF">TokyoTyrant::RDBMS_DIFF</varname>
      <initializer>2</initializer>
     </fieldsynopsis>
     
@@ -264,8 +286,8 @@
     <title>TokyoTyrant Constants</title>
     <variablelist>
 
-     <varlistentry xml:id="tokyotyrant.constants.DEFAULT_PORT">
-      <term><constant>TokyoTyrant::DEFAULT_PORT</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBDEF_PORT">
+      <term><constant>TokyoTyrant::RDBDEF_PORT</constant></term>
       <listitem>
        <para>The default port of the Tokyo Tyrant database</para>
       </listitem>
@@ -453,57 +475,78 @@
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBQC_FTSPH">
-      <term><constant>TokyoTyrant::RDBQC_FTSPH</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBQCFTS_PH">
+      <term><constant>TokyoTyrant::RDBQCFTS_PH</constant></term>
       <listitem>
        <para>full-text search with the phrase of (Tokyo Tyrant &gt;= 1.1.29)</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBQC_FTSAND">
-      <term><constant>TokyoTyrant::RDBQC_FTSAND</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBQCFTS_AND">
+      <term><constant>TokyoTyrant::RDBQCFTS_AND</constant></term>
       <listitem>
        <para>full-text search with all tokens in (Tokyo Tyrant &gt;= 1.1.29)</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBQC_FTSOR">
-      <term><constant>TokyoTyrant::RDBQC_FTSOR</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBQCFTS_OR">
+      <term><constant>TokyoTyrant::RDBQCFTS_OR</constant></term>
       <listitem>
        <para>full-text search with at least one token in (Tokyo Tyrant &gt;= 1.1.29)</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBQC_FTSEX">
-      <term><constant>TokyoTyrant::RDBQC_FTSEX</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBQCFTS_EX">
+      <term><constant>TokyoTyrant::RDBQCFTS_EX</constant></term>
       <listitem>
        <para>full-text search with the compound expression of (Tokyo Tyrant &gt;= 1.1.29)</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBXO_LCKREC">
-      <term><constant>TokyoTyrant::RDBXO_LCKREC</constant></term>
+    <varlistentry xml:id="tokyotyrant.constants.RDBMS_UNION">
+     <term><constant>TokyoTyrant::RDBQCFTS_AND</constant></term>
+     <listitem>
+      <para>Metasearch union between records (Tokyo Tyrant &gt;= 1.1.33)</para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry xml:id="tokyotyrant.constants.RDBMS_ISECT">
+     <term><constant>TokyoTyrant::RDBQCFTS_OR</constant></term>
+     <listitem>
+      <para>Metasearch intersection between records (Tokyo Tyrant &gt;= 1.1.33)</para>
+     </listitem>
+    </varlistentry>
+
+    <varlistentry xml:id="tokyotyrant.constants.RDBMS_DIFF">
+     <term><constant>TokyoTyrant::RDBQCFTS_EX</constant></term>
+     <listitem>
+      <para>Metasearch difference between records (Tokyo Tyrant &gt;= 1.1.33)</para>
+     </listitem>
+    </varlistentry>
+
+     <varlistentry xml:id="tokyotyrant.constants.RDBXOLCK_REC">
+      <term><constant>TokyoTyrant::RDBXOLCK_REC</constant></term>
       <listitem>
        <para>record locking</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDBXO_LCKGLB">
-      <term><constant>TokyoTyrant::RDBXO_LCKGLB</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBXOLCK_GLB">
+      <term><constant>TokyoTyrant::RDBXOLCK_GLB</constant></term>
       <listitem>
        <para>global locking</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDB_RECINT">
-      <term><constant>TokyoTyrant::RDB_RECINT</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBREC_INT">
+      <term><constant>TokyoTyrant::RDBREC_INT</constant></term>
       <listitem>
        <para>record type int</para>
       </listitem>
      </varlistentry>
 
-     <varlistentry xml:id="tokyotyrant.constants.RDB_RECDBL">
-      <term><constant>TokyoTyrant::RDB_RECDBL</constant></term>
+     <varlistentry xml:id="tokyotyrant.constants.RDBREC_DBL">
+      <term><constant>TokyoTyrant::RDBREC_DBL</constant></term>
       <listitem>
        <para>record type float (double)</para>
       </listitem>

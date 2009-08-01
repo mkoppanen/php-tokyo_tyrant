@@ -71,7 +71,7 @@
     <programlisting role="php">
 <![CDATA[
 <?php
-$tt = new TokyoTyrant("localhost", TokyoTyrant::DEFAULT_PORT);
+$tt = new TokyoTyrant("localhost", TokyoTyrant::RDBDEF_PORT);
 /* Adds integer 3 to key and creates a new key */
 $tt->add("test", 3);
 

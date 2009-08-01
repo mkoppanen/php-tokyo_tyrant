@@ -91,6 +91,7 @@ array(2) {
   <para>
    <simplelist>
     <member><methodname>TokyoTyrantQuery::out</methodname></member>
+    <member><methodname>TokyoTyrantQuery::metaSearch</methodname></member>
    </simplelist>
   </para>
  </refsect1>
