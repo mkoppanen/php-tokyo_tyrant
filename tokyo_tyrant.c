@@ -1299,6 +1299,27 @@ PHP_METHOD(tokyotyrantquery, search)
 }
 /* }}} */
 
+/* {{{ array TokyoTyrantQuery::count();
+	Executes a search query and return the count of corresponding records.
+*/
+PHP_METHOD(tokyotyrantquery, count)
+{
+	php_tokyo_tyrant_query_object *intern;
+	int res;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_QUERY_OBJECT;
+	res    = tcrdbqrysearchcount(intern->qry);
+   
+    RETVAL_LONG(res);
+	
+	return;
+}
+/* }}} */
+
 /* {{{ TokyoTyrantQuery TokyoTyrantQuery::out();
 	Executes a delete query
 */
@@ -1654,6 +1675,7 @@ static function_entry php_tokyo_tyrant_query_class_methods[] =
 	PHP_ME(tokyotyrantquery, setlimit,		tokyo_tyrant_query_setlimit_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, setorder,		tokyo_tyrant_query_setorder_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, search,		tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantquery, count,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, out,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
 #if PHP_TOKYO_TYRANT_VERSION >= 1001033
 	PHP_ME(tokyotyrantquery, hint,			tokyo_tyrant_empty_args,			ZEND_ACC_PUBLIC)
