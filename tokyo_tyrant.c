@@ -1241,7 +1241,6 @@ PHP_METHOD(tokyotyrantquery, metasearch)
 		zend_bool correct_type = 0;
 
 		if (zend_hash_get_current_data_ex(Z_ARRVAL_P(queries), (void**)&ppzval, &pos) == SUCCESS) {
-	
 			zval tmpcopy = **ppzval;
 			zval_copy_ctor(&tmpcopy);
 			INIT_PZVAL(&tmpcopy);
@@ -1257,7 +1256,7 @@ PHP_METHOD(tokyotyrantquery, metasearch)
 			}
 			zval_dtor(&tmpcopy);
 		}
-		
+	
 		if (!correct_type) {
 			efree(qrys);
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must contain only TokyoTyrantQuery instances");
