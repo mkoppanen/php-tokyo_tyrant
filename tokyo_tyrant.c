@@ -1313,8 +1313,8 @@ PHP_METHOD(tokyotyrantquery, count)
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
 	res    = tcrdbqrysearchcount(intern->qry);
-   
-    RETVAL_LONG(res);
+
+	RETVAL_LONG(res);
 	
 	return;
 }
