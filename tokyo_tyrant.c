@@ -1304,18 +1304,13 @@ PHP_METHOD(tokyotyrantquery, search)
 PHP_METHOD(tokyotyrantquery, count)
 {
 	php_tokyo_tyrant_query_object *intern;
-	int res;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
 		return;
 	}
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
-	res    = tcrdbqrysearchcount(intern->qry);
-
-	RETVAL_LONG(res);
-	
-	return;
+	RETURN_LONG(tcrdbqrysearchcount(intern->qry));
 }
 /* }}} */
 
