@@ -21,6 +21,10 @@ var_dump($query->search());
 
 echo "------------------\n";
 
+var_dump($query->count());
+
+echo "------------------\n";
+
 $query = $tt->getQuery();
 $query->addCond('test', TokyoTyrant::RDBQC_STREQ, 'abc123111');
 var_dump($query->search());
@@ -30,6 +34,10 @@ echo "------------------\n";
 $query = $tt->getQuery();
 $query->addCond('test', TokyoTyrant::RDBQC_STREW, '111');
 var_dump($query->search());
+
+echo "------------------\n";
+
+var_dump($query->count());
 
 echo "------------------\n";
 
@@ -58,6 +66,10 @@ var_dump($query->search());
 
 echo "------------------\n";
 
+var_dump($query->count());
+
+echo "------------------\n";
+
 ?>
 --EXPECTF--
 array(1) {
@@ -68,6 +80,8 @@ array(1) {
   }
 }
 ------------------
+int(1)
+------------------
 array(1) {
   [1]=>
   array(1) {
@@ -89,6 +103,8 @@ array(2) {
   }
 }
 ------------------
+int(2)
+------------------
 array(2) {
   [1]=>
   array(1) {
@@ -133,4 +149,6 @@ array(1) {
     string(9) "cde456111"
   }
 }
+------------------
+int(1)
 ------------------
