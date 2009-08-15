@@ -19,7 +19,7 @@
 # define _PHP_TOKYO_TYRANT_H_
 
 #define PHP_TOKYO_TYRANT_EXTNAME "tokyo_tyrant"
-#define PHP_TOKYO_TYRANT_EXTVER "0.0.9"
+#define PHP_TOKYO_TYRANT_EXTVER "@PACKAGE_VERSION@"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

@@ -43,7 +43,9 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 			<file name="tokyo_tyrant_funcs.c" role="src" />
 			
 			<!-- headers -->
-			<file name="php_tokyo_tyrant.h" role="src" />
+			<file name="php_tokyo_tyrant.h" role="src">
+				<tasks:replace from="@PACKAGE_VERSION@" to="version" type="package-info" />
+			</file>
 			<file name="php_tokyo_tyrant_connection.h" role="src" />
 			<file name="php_tokyo_tyrant_failover.h" role="src" />
 			<file name="php_tokyo_tyrant_funcs.h" role="src" />
