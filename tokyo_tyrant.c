@@ -1328,7 +1328,7 @@ PHP_METHOD(tokyotyrantquery, out)
 	intern = PHP_TOKYO_QUERY_OBJECT;
 	
 	if (!tcrdbqrysearchout(intern->qry)) {
-		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to execute query: %s");
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to execute query");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
