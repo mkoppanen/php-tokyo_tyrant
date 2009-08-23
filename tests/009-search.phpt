@@ -70,6 +70,15 @@ var_dump($query->count());
 
 echo "------------------\n";
 
+$query = $tt->getQuery();
+var_dump($query->search());
+
+echo "------------------\n";
+
+var_dump($query->count());
+
+echo "------------------\n";
+
 ?>
 --EXPECTF--
 array(1) {
@@ -151,4 +160,24 @@ array(1) {
 }
 ------------------
 int(1)
+------------------
+array(3) {
+  [1]=>
+  array(1) {
+    ["test"]=>
+    string(9) "abc123111"
+  }
+  [2]=>
+  array(1) {
+    ["test"]=>
+    string(9) "cde456111"
+  }
+  [3]=>
+  array(1) {
+    ["test"]=>
+    string(4) "abba"
+  }
+}
+------------------
+int(3)
 ------------------
