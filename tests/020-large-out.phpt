@@ -16,8 +16,8 @@ function tt_populate($start, $amount)
 	global $tt;
 
 	for ($i = $start; $i < $amount; $i++) {
-		$tt->put('cherry_' . $i,     array('color' => 'red'));
-		$tt->put('strawberry_' . $i, array('color' => 'red'));
+		$tt->put('cherry_' . $i,     array('color' => 'red', 'data' => str_repeat('x', 1000)));
+		$tt->put('strawberry_' . $i, array('color' => 'red', 'data' => str_repeat('x', 1000)));
 	}
 }
 
