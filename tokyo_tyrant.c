@@ -481,6 +481,28 @@ PHP_METHOD(tokyotyrant, sync)
 }
 /* }}} */
 
+/* {{{ TokyoTyrant TokyoTyrant::tune(float timeout[, int options]);
+	Tunes to options / timeout
+	@throws TokyoTyrantException if sync fails
+*/
+PHP_METHOD(tokyotyrant, tune) 
+{
+	php_tokyo_tyrant_object *intern;
+	double timeout;
+	long options = RDBTRECON;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d|l", &timeout, &options) == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	if (!tcrdbtune(intern->conn->rdb, timeout, options)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to tune the database options: %s");
+	}
+	PHP_TOKYO_CHAIN_METHOD;
+}
+/* }}} */
+
 /* {{{ TokyoTyrant TokyoTyrant::vanish();
 	Empties the remote database
 */
@@ -1536,6 +1558,11 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_stat_args, 0, 0, 0)
 	ZEND_ARG_INFO(0, params)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_tune_args, 0, 0, 1)
+	ZEND_ARG_INFO(0, timeout)
+	ZEND_ARG_INFO(0, options)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_tableput_args, 0, 0, 1)
 	ZEND_ARG_INFO(0, columns)
 	ZEND_ARG_INFO(0, pk)
@@ -1587,6 +1614,7 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 	PHP_ME(tokyotyrant, connecturi,		tokyo_tyrant_connecturi_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, vanish,			tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)	
 	PHP_ME(tokyotyrant, stat,			tokyo_tyrant_stat_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, tune,			tokyo_tyrant_tune_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, fwmkeys,		tokyo_tyrant_fwmkeys_args,		ZEND_ACC_PUBLIC)
 	
 	PHP_ME(tokyotyrant, size,			tokyo_tyrant_size_args,			ZEND_ACC_PUBLIC)
@@ -1811,7 +1839,7 @@ static PHP_INI_MH(OnUpdateKeyPrefix)
 }
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "5.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "0.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.session_salt", "", PHP_INI_ALL, OnUpdateString, salt, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateKeyPrefix, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.allow_failover", "1", PHP_INI_ALL, OnUpdateBool, allow_failover, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
@@ -1825,7 +1853,7 @@ static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyran
 	tokyo_tyrant_globals->connections = NULL;
 	tokyo_tyrant_globals->failures    = NULL;
 	
-	tokyo_tyrant_globals->default_timeout = 5.0;
+	tokyo_tyrant_globals->default_timeout = 0.0;
 	tokyo_tyrant_globals->salt = NULL;
 	
 	tokyo_tyrant_globals->key_prefix     = NULL;
@@ -1932,6 +1960,8 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBMS_ISECT", RDBMSISECT);		/* intersection */
 	TOKYO_REGISTER_CONST_LONG("RDBMS_DIFF", RDBMSDIFF);			/* difference */
 #endif
+
+	TOKYO_REGISTER_CONST_LONG("RDBT_RECON", RDBTRECON);			/* reconnect */
 	
 #undef TOKYO_REGISTER_CONST_LONG
 

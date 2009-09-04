@@ -121,7 +121,7 @@ zend_bool php_tt_connect_ex(php_tt_conn *conn, char *host, int port, double time
 	/* Init rdb object */
 	conn->rdb = tcrdbnew();
 
-	if (timeout <= 0.0) {
+	if (timeout < 0.0) {
 		timeout = TOKYO_G(default_timeout);
 	}
 	
