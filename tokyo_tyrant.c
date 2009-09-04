@@ -1811,7 +1811,7 @@ static PHP_INI_MH(OnUpdateKeyPrefix)
 }
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "2.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
+	STD_PHP_INI_ENTRY("tokyo_tyrant.default_timeout", "5.0", PHP_INI_ALL, OnUpdateReal, default_timeout, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.session_salt", "", PHP_INI_ALL, OnUpdateString, salt, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.key_prefix", "", PHP_INI_ALL, OnUpdateKeyPrefix, key_prefix, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
 	STD_PHP_INI_ENTRY("tokyo_tyrant.allow_failover", "1", PHP_INI_ALL, OnUpdateBool, allow_failover, zend_tokyo_tyrant_globals, tokyo_tyrant_globals)
@@ -1825,7 +1825,7 @@ static void php_tokyo_tyrant_init_globals(zend_tokyo_tyrant_globals *tokyo_tyran
 	tokyo_tyrant_globals->connections = NULL;
 	tokyo_tyrant_globals->failures    = NULL;
 	
-	tokyo_tyrant_globals->default_timeout = 2.0;
+	tokyo_tyrant_globals->default_timeout = 5.0;
 	tokyo_tyrant_globals->salt = NULL;
 	
 	tokyo_tyrant_globals->key_prefix     = NULL;
