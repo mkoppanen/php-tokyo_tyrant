@@ -92,15 +92,15 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	}
 	
 	if (!pk) {
-		pk = php_tt_create_pk(conn, &pk_len);
+		pk = php_tt_create_pk(conn, &pk_len TSRMLS_CC);
 	} else {
-		if (!php_tt_sess_touch(conn, current_rand, sess_rand, pk, strlen(pk))) {
+		if (!php_tt_sess_touch(conn, current_rand, sess_rand, pk, strlen(pk) TSRMLS_CC)) {
 			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Unable to update the session");
 		}
 		efree(current_rand);
 	}
 
-	sid = php_tt_create_sid(sess_rand, idx, pk, TOKYO_G(salt)); 
+	sid = php_tt_create_sid(sess_rand, idx, pk, TOKYO_G(salt) TSRMLS_CC); 
 
 	efree(sess_rand);
 	efree(pk);
@@ -114,7 +114,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 /* {{{ PS_OPEN */
 PS_OPEN_FUNC(tokyo_tyrant)
 {	
-	php_tt_session *session = php_tt_session_init();
+	php_tt_session *session = php_tt_session_init(TSRMLS_C);
 
 	if (!session) {
 		PS_SET_MOD_DATA(NULL);
@@ -138,7 +138,7 @@ PS_READ_FUNC(tokyo_tyrant)
 	zend_bool mismatch;
 
 	/* Try to tokenize session id */
-	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk))) {
+	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk) TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}
 	
@@ -148,7 +148,7 @@ PS_READ_FUNC(tokyo_tyrant)
 	session->pk_len        = strlen(session->pk);
 	
 	/* Validate the session id */
-	if (!php_tt_validate(session->sess_rand, session->checksum, session->idx, session->pk, TOKYO_G(salt))) {
+	if (!php_tt_validate(session->sess_rand, session->checksum, session->idx, session->pk, TOKYO_G(salt) TSRMLS_CC)) {
 		session->remap         = 1;
 		PS(invalid_session_id) = 1;
 		return FAILURE;
@@ -160,13 +160,13 @@ PS_READ_FUNC(tokyo_tyrant)
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Internal error: idx does not map to a server");
 	}
 
-	session->conn = php_tt_conn_init();
+	session->conn = php_tt_conn_init(TSRMLS_C);
 	
 	if (!php_tt_connect_ex(session->conn, server->host, server->port, TOKYO_G(default_timeout), 1 TSRMLS_CC)) {
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		
 		/* Remap if the server has been failed */
-		if (!php_tt_server_ok(server->host, server->port)) {
+		if (!php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 			session->remap         = 1;
 			PS(invalid_session_id) = 1;
 			return FAILURE;
@@ -199,7 +199,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	efree(session->checksum);
 	efree(session->pk);
 	
-	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk))) {
+	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk) TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
 	}
 	
@@ -208,16 +208,16 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	session->checksum_len  = strlen(session->checksum);
 	session->pk_len        = strlen(session->pk);
 	
-	if (!php_tt_validate(session->sess_rand, session->checksum, session->idx, session->pk, TOKYO_G(salt))) {
+	if (!php_tt_validate(session->sess_rand, session->checksum, session->idx, session->pk, TOKYO_G(salt) TSRMLS_CC)) {
 		return FAILURE;
 	}	
 	
-	if (!php_tt_save_sess_data(session->conn, session->sess_rand, session->pk, strlen(session->pk), val, vallen)) {
+	if (!php_tt_save_sess_data(session->conn, session->sess_rand, session->pk, strlen(session->pk), val, vallen TSRMLS_CC)) {
 		server = php_tt_pool_get_server(session->pool, session->idx TSRMLS_CC);
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		
 		/* Remap if the server has been failed */
-		if (!php_tt_server_ok(server->host, server->port)) {
+		if (!php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 			session->remap         = 1;
 			PS(invalid_session_id) = 1;
 			return FAILURE;
@@ -235,7 +235,7 @@ PS_DESTROY_FUNC(tokyo_tyrant)
 	TT_SESS_DATA;
 	zend_bool res;
 
-	res = php_tt_sess_destroy(session->conn, session->pk, session->pk_len);
+	res = php_tt_sess_destroy(session->conn, session->pk, session->pk_len TSRMLS_CC);
 	php_tt_session_deinit(session TSRMLS_CC);
 	session = NULL;
 

@@ -204,7 +204,7 @@ char *php_tt_get_sess_data(php_tt_conn *conn, char *sess_rand, const char *pk, i
 	return buffer;
 }
 
-zend_bool php_tt_save_sess_data(php_tt_conn *conn, char *rand_part, char *pk, int pk_len, const char *data, int data_len) 
+zend_bool php_tt_save_sess_data(php_tt_conn *conn, char *rand_part, char *pk, int pk_len, const char *data, int data_len TSRMLS_DC) 
 {
 	TCMAP *cols;
 	char timestamp[64];
@@ -242,12 +242,12 @@ zend_bool php_tt_sess_touch(php_tt_conn *conn, char *current_rand, char *sess_ra
 	int data_len;
 	zend_bool mismatch;
 
-	data = php_tt_get_sess_data(conn, current_rand, pk, pk_len, &data_len, &mismatch);
+	data = php_tt_get_sess_data(conn, current_rand, pk, pk_len, &data_len, &mismatch TSRMLS_CC);
 
 	if (!data) {
 		return 1;
 	}
-	return php_tt_save_sess_data(conn, sess_rand, pk, pk_len, data, data_len);	
+	return php_tt_save_sess_data(conn, sess_rand, pk, pk_len, data, data_len TSRMLS_CC);	
 }
 
 zend_bool php_tt_sess_destroy(php_tt_conn *conn, char *pk, int pk_len TSRMLS_DC)

@@ -94,7 +94,7 @@ zend_bool php_tt_server_ok(char *host, int port TSRMLS_DC)
 	}
 }
 
-static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend_hash_key *hash_key)
+static int _php_tt_check_servers(zval **ppzval TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	char *key, host[4096];
 	double timeout;
@@ -135,7 +135,7 @@ static int _php_tt_check_servers(zval **ppzval, int num_args, va_list args, zend
 void php_tt_health_check(TSRMLS_D) 
 {
 	if (TOKYO_G(failures) && zend_hash_num_elements(TOKYO_G(failures)) > 0) {
-		zend_hash_apply_with_arguments(TOKYO_G(failures), (apply_func_args_t)_php_tt_check_servers, 0);
+		zend_hash_apply_with_arguments(TOKYO_G(failures) TSRMLS_CC, (apply_func_args_t)_php_tt_check_servers, 0);
 	}
 }
 

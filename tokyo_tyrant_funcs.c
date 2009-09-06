@@ -27,7 +27,7 @@
 /* {{{ void php_tt_object_init(php_tokyo_tyrant_object *intern TSRMLS_DC) */
 void php_tt_object_init(php_tokyo_tyrant_object *intern TSRMLS_DC)
 {
-	intern->conn = php_tt_conn_init();
+	intern->conn = php_tt_conn_init(TSRMLS_C);
 }
 /* }}} */
 

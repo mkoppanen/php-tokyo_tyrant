@@ -43,7 +43,7 @@ void php_tt_disconnect_ex(php_tt_conn *conn, zend_bool dealloc_rdb TSRMLS_DC) {
 void php_tt_conn_deinit(php_tt_conn *conn TSRMLS_DC) 
 {	
 	if (!conn->persistent && conn->rdb) {
-		php_tt_disconnect_ex(conn, 1);
+		php_tt_disconnect_ex(conn, 1 TSRMLS_CC);
 	}
 	efree(conn);
 }
@@ -184,7 +184,7 @@ zend_bool php_tt_connect(php_tokyo_tyrant_object *intern, char *host, int port, 
 	if (intern->conn->connected) {
 		php_tt_disconnect_ex(intern->conn, (intern->conn->persistent == 0) TSRMLS_CC);
 	}
-	return php_tt_connect_ex(intern->conn, host, port, timeout, persistent);	
+	return php_tt_connect_ex(intern->conn, host, port, timeout, persistent TSRMLS_CC);	
 }
 
 zend_bool php_tt_connect2(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC)

@@ -170,8 +170,8 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, cha
 }
 /* }}} */
 
-/* {{{ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_key *hash_key) */
-static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_key *hash_key)
+/* {{{ static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key) */
+static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	zval tmpcopy;
 	php_tokyo_tyrant_object *intern;
@@ -181,8 +181,6 @@ static int _php_tt_op_many(zval **ppzval, int num_args, va_list args, zend_hash_
     if (num_args != 3) {
 		return 0;
     }
-
-	TSRMLS_FETCH();
 
 	intern = va_arg(args, php_tokyo_tyrant_object *);
 	type   = va_arg(args, int);
@@ -231,7 +229,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (Z_TYPE_P(key) == IS_ARRAY) {
-		zend_hash_apply_with_arguments(Z_ARRVAL_P(key), (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
+		zend_hash_apply_with_arguments(Z_ARRVAL_P(key) TSRMLS_CC, (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
 		
 		if (!code) {
 			if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
@@ -1944,7 +1942,11 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	TOKYO_REGISTER_CONST_LONG("RDBIT_OPT", RDBITOPT);			/* optimize */
 	TOKYO_REGISTER_CONST_LONG("RDBIT_VOID", RDBITVOID);			/* void */
 	TOKYO_REGISTER_CONST_LONG("RDBIT_KEEP", RDBITKEEP);			/* keep existing index */
-	
+#if PHP_TOKYO_TYRANT_VERSION >= 1001029
+	TOKYO_REGISTER_CONST_LONG("RDBIT_TOKEN", RDBITTOKEN);		/* token inverted index */
+	TOKYO_REGISTER_CONST_LONG("RDBIT_QGRAM", RDBITQGRAM);		/* q-gram inverted index */
+#endif	
+		
 	TOKYO_REGISTER_CONST_LONG("TTE_SUCCESS", TTESUCCESS);		/* success */
 	TOKYO_REGISTER_CONST_LONG("TTE_INVALID", TTEINVALID);		/* invalid operation */
 	TOKYO_REGISTER_CONST_LONG("TTE_NOHOST",  TTENOHOST);		/* host not found */

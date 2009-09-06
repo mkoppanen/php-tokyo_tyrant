@@ -58,7 +58,7 @@ void php_tt_pool_append2(php_tt_server_pool *pool, char *host, int port TSRMLS_D
 	server->host = estrdup(host);
 	server->port = port;
 	
-	php_tt_pool_append(pool, server);
+	php_tt_pool_append(pool, server TSRMLS_CC);
 }
 
 void php_tt_pool_deinit(php_tt_server_pool *pool TSRMLS_DC) 
@@ -67,7 +67,7 @@ void php_tt_pool_deinit(php_tt_server_pool *pool TSRMLS_DC)
 		int i;
 		
 		for (i = 0; i < pool->num_servers; i++) {
-			php_tt_server_deinit(pool->servers[i]);
+			php_tt_server_deinit(pool->servers[i] TSRMLS_CC);
 			pool->servers[i] = NULL;
 		}
 		efree(pool->servers);
