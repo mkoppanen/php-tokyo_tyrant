@@ -9,7 +9,7 @@ include dirname(__FILE__) . "/skipif.inc.php";
 include 'config.inc.php';
 
 $tt = new TokyoTyrantTable(TT_TABLE_HOST, TT_TABLE_PORT);
-$tt->vanish();
+$tt->sync()->vanish();
 
 $tt->put(null, array('test' => 'abc123111'));
 $tt->put(null, array('test' => 'cde456111'));

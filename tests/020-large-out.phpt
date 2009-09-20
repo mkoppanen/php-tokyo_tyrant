@@ -18,8 +18,11 @@ function tt_populate($start, $amount)
 	global $tt;
 
 	for ($i = $start; $i < $amount; $i++) {
-		$tt->put('cherry_' . $i,     array('color' => 'red', 'data' => str_repeat('x', 1000)));
-		$tt->put('strawberry_' . $i, array('color' => 'red', 'data' => str_repeat('x', 1000)));
+		$tt->put('cherry_' . $i,     array('color' => 'red', 'data' => str_repeat('x', 10)));
+		$tt->put('strawberry_' . $i, array('color' => 'red', 'data' => str_repeat('x', 10)));
+	
+		if ($i % 1000 === 0)
+			$tt->sync();
 	}
 }
 
@@ -31,7 +34,7 @@ $query->addCond('color', TokyoTyrant::RDBQC_STREQ, 'red');
 echo "# removing " . $query->count() . " #\n";
 $query->out();
 
-tt_populate(0, 100000);
+tt_populate(0, 10000);
 
 $query = $tt->getQuery();
 $query->addCond('color', TokyoTyrant::RDBQC_STREQ, 'red');
@@ -42,4 +45,4 @@ $query->out();
 ?>
 --EXPECTF--
 # removing 20000 #
-# removing 200000 #
+# removing 20000 #

@@ -30,17 +30,17 @@ var_dump($query->metaSearch(array($query1), TokyoTyrant::RDBMS_UNION));
 ?>
 --EXPECTF--
 array(3) {
-  ["cherry"]=>
+  ["%s"]=>
   array(1) {
     ["color"]=>
     string(3) "red"
   }
-  ["strawberry"]=>
+  ["%s"]=>
   array(1) {
     ["color"]=>
     string(3) "red"
   }
-  ["lemon"]=>
+  ["%s"]=>
   array(1) {
     ["color"]=>
     string(6) "yellow"
