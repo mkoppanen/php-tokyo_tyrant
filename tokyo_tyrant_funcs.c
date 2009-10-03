@@ -90,10 +90,10 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC)
 		zval_copy_ctor(&tmpcopy);
 		INIT_PZVAL(&tmpcopy);
 		convert_to_string(&tmpcopy);
-		
+
 		if (value_as_key) {
 			kbuf = php_tt_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
-			tcmapput2(map, kbuf, "");
+			tcmapput(map, kbuf, new_len, "", sizeof(""));
 			efree(kbuf);
 		} else {
 			char *arr_key;
@@ -110,7 +110,7 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC)
 			}
 			
 			kbuf = php_tt_prefix(arr_key, arr_key_len, &new_len TSRMLS_CC);
-			tcmapput2(map, kbuf, Z_STRVAL(tmpcopy));
+			tcmapput(map, kbuf, new_len, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy));
 			efree(kbuf);
 			
 			if (allocated) {
@@ -132,11 +132,17 @@ void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 	
 	tcmapiterinit(map);
 	while ((name = tcmapiternext2(map)) != NULL) {
+		int name_len;
+		const char *buffer;
+		int buffer_len;
 		const char *kbuf = (char *)name;
-		kbuf += TOKYO_G(key_prefix_len);
-		
-		add_assoc_string(array, (char *)kbuf, (char *)tcmapget2(map, name), 1); 
-    }
+		kbuf += TOKYO_G(key_prefix_len);	
+		buffer = tcmapget(map, name, strlen(name), &buffer_len);
+
+		if (buffer) {
+			add_assoc_stringl(array, (char *)kbuf, (char *)buffer, buffer_len, 1); 
+		}
+	}
 }
 /* }}} */
 
@@ -181,6 +187,7 @@ void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
 			array_init(row);
 			
 			while ((name = tcmapiternext2(cols)) != NULL) {
+				int name_len;
 				const char *kbuf = name;
 				kbuf += TOKYO_G(key_prefix_len);
 				

@@ -124,8 +124,8 @@ PHP_METHOD(tokyotyrant, connecturi)
 }
 /* }}} */
 
-/* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value TSRMLS_DC) */
-static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value TSRMLS_DC)
+/* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value, int value_len TSRMLS_DC) */
+static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value, int value_len TSRMLS_DC)
 {
 	int code = 0;
 	int new_len;
@@ -135,23 +135,23 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, cha
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_OP_PUT:
-			code = tcrdbput2(rdb, kbuf, value);
+			code = tcrdbput(rdb, kbuf, new_len, value, value_len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTKEEP:
-			code = tcrdbputkeep2(rdb, kbuf, value);
+			code = tcrdbputkeep(rdb, kbuf, new_len, value, value_len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTCAT:
-			code = tcrdbputcat2(rdb, kbuf, value);
+			code = tcrdbputcat(rdb, kbuf, new_len, value, value_len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTNR:
-			code = tcrdbputnr2(rdb, kbuf, value);
+			code = tcrdbputnr(rdb, kbuf, new_len, value, value_len);
 		break;
 
 		case PHP_TOKYO_TYRANT_OP_OUT:
-			code = tcrdbout2(rdb, kbuf);
+			code = tcrdbout(rdb, kbuf, new_len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_TBLOUT:
@@ -201,9 +201,9 @@ static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, 
 	convert_to_string(&tmpcopy);
 	
 	if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), NULL TSRMLS_CC);
+		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), NULL, 0 TSRMLS_CC);
 	} else {
-		*code = _php_tt_real_write(intern->conn->rdb, type, key, key_len, Z_STRVAL(tmpcopy) TSRMLS_CC);
+		*code = _php_tt_real_write(intern->conn->rdb, type, key, key_len, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy) TSRMLS_CC);
 	}
 
 	zval_dtor(&tmpcopy);
@@ -243,7 +243,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		convert_to_string(key);
 		
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), NULL TSRMLS_CC)) {
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), NULL, 0 TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to remove the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
@@ -254,7 +254,7 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 			}
 			convert_to_string(value);
 			
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), Z_STRVAL_P(value) TSRMLS_CC)) {
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), Z_STRVAL_P(value), Z_STRLEN_P(value) TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to store the record '%s': %s", 
 										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
 				return;
@@ -377,7 +377,7 @@ PHP_METHOD(tokyotyrant, get)
 	} else {
 		zval tmpcopy;
 		char *value, *kbuf;
-		int new_len;
+		int new_len, value_len;
 		
 		tmpcopy = *key;
 		zval_copy_ctor(&tmpcopy);
@@ -385,14 +385,14 @@ PHP_METHOD(tokyotyrant, get)
 		convert_to_string(&tmpcopy);
 	
 		kbuf = php_tt_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
-		value = tcrdbget2(intern->conn->rdb, kbuf);
+		value = tcrdbget(intern->conn->rdb, kbuf, new_len, &value_len);
 		zval_dtor(&tmpcopy);
 		efree(kbuf);
 		
 		if (!value) {
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 		}
-		RETVAL_STRING(value, 1);
+		RETVAL_STRINGL(value, value_len, 1);
 		free(value);
 	}
 	return;
