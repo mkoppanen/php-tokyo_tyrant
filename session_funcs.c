@@ -149,10 +149,6 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 	matches = sscanf(ptr, "%64s %40s %d %64s", *sess_rand, *checksum, &(*idx), *pk_str);
 	efree(ptr);
 
-	if (matches == 4) {
-		return 1;		
-	}	
-	
 	efree(*sess_rand);
 	*sess_rand = NULL;
 	
@@ -162,7 +158,7 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 	efree(*pk_str);
 	*pk_str = NULL;
 	
-	return 0;	
+	return (matches == 4);	
 }
 
 zend_bool php_tt_validate(char *sess_rand, char *checksum, int idx, char *pk, char *salt TSRMLS_DC) 
