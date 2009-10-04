@@ -29,6 +29,27 @@ output_ord($var, 9);
 
 $tt->vanish();
 
+echo "Binary key\n";
+
+$key = 'START' . "\0" . 'END';
+$var = 'START' . "\0" . "END"; 
+
+$tt->put($key, $var);
+
+$var = $tt->get($key);
+output_ord($var, 9);
+
+echo "Binary key with prefix\n";
+
+$key = 'START' . "\0" . 'END';
+$var = 'START' . "\0" . "END"; 
+
+ini_set("tokyo_tyrant.key_prefix", "my_prefix_");
+$tt->put($key, $var);
+
+$var = $tt->get($key);
+output_ord($var, 9);
+
 echo "Put multiple\n";
 
 $var = 'START' . "\0" . "END"; 
@@ -54,6 +75,12 @@ foreach ($keys as $value) {
 Simple put
 83 84 65 82 84 0 69 78 68 
 ------------
+83 84 65 82 84 0 69 78 68 
+------------
+Binary key
+83 84 65 82 84 0 69 78 68 
+------------
+Binary key with prefix
 83 84 65 82 84 0 69 78 68 
 ------------
 Put multiple
