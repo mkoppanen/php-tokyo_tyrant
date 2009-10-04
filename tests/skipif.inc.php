@@ -1,8 +1,10 @@
 <?php
 
-// Comment out to run tests 
-die("SKIP: Take a look into tests/config.inc.php and tests/skipif.inc.php");
+// Please not that databases defined in config.inc.php
+// will be emptied during the process. Make sure that 
+// they don't point to important databases
+die('skip see tests/skipif.inc.php')
 
 if (!extension_loaded('tokyo_tyrant'))
-	die('Skip');
+	die('skip no tokyo_tyrant extension loaded');
 ?>
