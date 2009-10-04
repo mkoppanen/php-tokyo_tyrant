@@ -20,6 +20,8 @@ $tt->put($key, $var);
 var_dump($tt->get("START"));
 var_dump($tt->get($key));
 
+$tt->vanish();
+
 /* test put shl */
 $tt->put($key, "abc"); 
 $tt->putshl($key, "de", 4); 
@@ -34,10 +36,21 @@ $tt->put($key, $var);
 var_dump($tt->get("START"));
 var_dump($tt->get($key));
 
+$tt->vanish();
+
+ini_set("tokyo_tyrant.key_prefix", "my\0prefix");
+$tt->put($key, $var);
+
+ini_set("tokyo_tyrant.key_prefix", null);
+$tt->put("my", "wrong data");
+var_dump($tt->get("my\0prefix" . $key));
+
+
 ?>
 --EXPECT--
 NULL
 string(9) "test data"
 string(4) "bcde"
 NULL
+string(9) "test data"
 string(9) "test data"

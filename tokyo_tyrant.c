@@ -1829,7 +1829,7 @@ static zend_object_value php_tokyo_tyrant_clone_object(zval *this_ptr TSRMLS_DC)
 static PHP_INI_MH(OnUpdateKeyPrefix)
 {
 	if (new_value) {
-		TOKYO_G(key_prefix_len) = strlen(new_value);
+		TOKYO_G(key_prefix_len) = new_value_length;
 	} else {
 		TOKYO_G(key_prefix_len) = 0;
 	}

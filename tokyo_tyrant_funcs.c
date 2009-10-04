@@ -47,14 +47,14 @@ char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
 	char *buffer;
 	int buffer_len;
 
-	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len;
+	buffer_len = TOKYO_G(key_prefix_len) + key_len;
 
 	buffer = emalloc(buffer_len);
 	memset(buffer, 0, buffer_len);
 	
 	/* non binary-safe prefix. */
-	strcpy(buffer, TOKYO_G(key_prefix));
-	memcpy(buffer + strlen(TOKYO_G(key_prefix)), key, key_len);
+	memcpy(buffer, TOKYO_G(key_prefix), TOKYO_G(key_prefix_len));
+	memcpy(buffer + TOKYO_G(key_prefix_len), key, key_len);
 	
 	buffer[buffer_len] = '\0';
 	*new_len = buffer_len;
