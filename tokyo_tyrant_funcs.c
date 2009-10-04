@@ -46,17 +46,18 @@ char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
 {
 	char *buffer;
 	int buffer_len;
+
+	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len;
+
+	buffer = emalloc(buffer_len);
+	memset(buffer, 0, buffer_len);
 	
-	if (!TOKYO_G(key_prefix)) {
-		return estrdup(key);
-	}
+	/* non binary-safe prefix. */
+	strcpy(buffer, TOKYO_G(key_prefix));
+	memcpy(buffer + strlen(TOKYO_G(key_prefix)), key, key_len);
 	
-	buffer_len = strlen(TOKYO_G(key_prefix)) + key_len + 1;
-	
-	buffer    = emalloc(buffer_len);
-	buffer[0] = '\0';
-	
-	*new_len = sprintf(buffer, "%s%s", TOKYO_G(key_prefix), key);
+	buffer[buffer_len] = '\0';
+	*new_len = buffer_len;
 	return buffer;
 }
 
@@ -109,7 +110,7 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC)
 				allocated = 1;
 			}
 			
-			kbuf = php_tt_prefix(arr_key, arr_key_len, &new_len TSRMLS_CC);
+			kbuf = php_tt_prefix(arr_key, arr_key_len - 1, &new_len TSRMLS_CC);
 			tcmapput(map, kbuf, new_len, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy));
 			efree(kbuf);
 			

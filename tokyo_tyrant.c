@@ -192,14 +192,14 @@ static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, 
 		key        = key_buf;
 	} else {
 		key     = hash_key->arKey;
-		key_len = hash_key->nKeyLength;
+		key_len = hash_key->nKeyLength - 1;
 	}
 
 	tmpcopy = **ppzval;
 	zval_copy_ctor(&tmpcopy);
 	INIT_PZVAL(&tmpcopy);
 	convert_to_string(&tmpcopy);
-	
+
 	if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
 		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), NULL, 0 TSRMLS_CC);
 	} else {
@@ -329,7 +329,7 @@ PHP_METHOD(tokyotyrant, putshl)
 	
 	/* Create a prefix */
 	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
-	code = tcrdbputshl2(intern->conn->rdb, kbuf, value, width);
+	code = tcrdbputshl(intern->conn->rdb, kbuf, new_len, value, value_len, width);
 	efree(kbuf);
 	
 	if (!code) {

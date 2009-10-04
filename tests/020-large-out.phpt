@@ -1,7 +1,5 @@
 --TEST--
-Test a large out query
---XFAIL--
-Does anyone know why?
+Test a large out query. (Might fail)
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
