@@ -49,8 +49,8 @@ char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
 
 	buffer_len = TOKYO_G(key_prefix_len) + key_len;
 
-	buffer = emalloc(buffer_len);
-	memset(buffer, 0, buffer_len);
+	buffer = emalloc(buffer_len + 1);
+	memset(buffer, 0, buffer_len + 1);
 	
 	/* non binary-safe prefix. */
 	memcpy(buffer, TOKYO_G(key_prefix), TOKYO_G(key_prefix_len));
@@ -58,6 +58,7 @@ char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC)
 	
 	buffer[buffer_len] = '\0';
 	*new_len = buffer_len;
+
 	return buffer;
 }
 

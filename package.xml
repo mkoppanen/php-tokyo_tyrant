@@ -15,10 +15,10 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 		<email>mkoppanen@php.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2009-10-03</date>
+	<date>2009-10-22</date>
 	<version>
-		<release>0.1.1</release>
-		<api>0.1.1</api>
+		<release>0.1.2</release>
+		<api>0.1.2</api>
 	</version>
 	<stability>
 		<release>beta</release>
@@ -26,8 +26,7 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</stability>
 	<license uri="http://www.php.net/license">PHP License</license>
 <notes>
-- Disabled timeout by default
-- Added tune method to change the timeout
+- Make sure that keys and values are binary-safe
 </notes>
 	<contents>
 		<dir name="/">
