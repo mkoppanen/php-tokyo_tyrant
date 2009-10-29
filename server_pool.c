@@ -92,6 +92,12 @@ php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC)
 			}
 			return NULL;
 		}
+		
+		if (!url->host || !url->port) {
+			php_url_free(url);
+			return NULL;
+		}
+		
 		php_tt_pool_append2(pool, url->host, url->port TSRMLS_CC);
 		php_url_free(url);
 		url = NULL;
