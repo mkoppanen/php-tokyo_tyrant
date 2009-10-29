@@ -94,6 +94,7 @@ php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC)
 		}
 		
 		if (!url->host || !url->port) {
+			efree(ptr);
 			php_url_free(url);
 			return NULL;
 		}
