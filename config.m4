@@ -26,70 +26,69 @@ dnl Add dependency to date extension if PHP >= 5.3.0 is used
   fi
 
 dnl Tokyo Tyrant parts
-
-  AC_MSG_CHECKING(for tcrdb.h)
-
-  for i in $PHP_TOKYO_TYRANT /usr /usr/local; do
-    test -r $i/include/tcrdb.h && TYRANT_PREFIX=$i && break 
-  done
-
-  if test -z $TYRANT_PREFIX; then
-    AC_MSG_ERROR(unable to find tcrdb.h)
-  fi
-
-  AC_MSG_RESULT(found in $TYRANT_PREFIX/include/tcrdb.h)
-
-  AC_MSG_CHECKING(for tcrmgr binary)
-
-  if test -r $TYRANT_PREFIX/bin/tcrmgr; then
-    TYRANT_MGR_BIN=$TYRANT_PREFIX/bin/tcrmgr
-  fi
-
-  if test -z $TYRANT_MGR_BIN; then
-    AC_MSG_ERROR(unable to find tcrmgr)
-  fi
-
-  AC_MSG_RESULT(found in $TYRANT_MGR_BIN)
-
-  AC_MSG_CHECKING(for Tokyo Tyrant version)
-
-  dnl Get the version, a bit of a hack
-  TT_PHP_VERSION_STRING=`$TYRANT_MGR_BIN version | grep version | cut -d ' ' -f 4` 
   
-  if test -z "$TT_PHP_VERSION_STRING"; then
-    AC_MSG_ERROR(Unable to get tokyo tyrant version)
+  AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+  if test -z "$PKG_CONFIG"; then
+    AC_MSG_RESULT([pkg-config not found])
+    AC_MSG_ERROR([Please reinstall the pkg-config distribution])
   fi
 
-  TT_PHP_VERSION_MASK=`echo ${TT_PHP_VERSION_STRING} | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  ORIG_PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
-  if test $TT_PHP_VERSION_MASK -ge 1001024; then
-    AC_MSG_RESULT(found version $TT_PHP_VERSION_STRING)
+  dnl Tokyo Tyrant PKG_CONFIG
+  if test "$PHP_TOKYO_TYRANT" = "yes"; then
+    export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/lib/pkgconfig:/opt/local/lib/pkgconfig
   else
-    AC_MSG_ERROR(no. You need Tokyo Tyrant version >= 1.2.24)
+    export PKG_CONFIG_PATH=$PHP_TOKYO_TYRANT:$PHP_TOKYO_TYRANT/lib/pkgconfig
   fi
 
-  AC_DEFINE_UNQUOTED(PHP_TOKYO_TYRANT_VERSION, ${TT_PHP_VERSION_MASK}, [ ])
+  AC_MSG_CHECKING([for Tokyo Tyrant])
+  if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists tokyotyrant; then
+    PHP_TYRANT_INCS=`$PKG_CONFIG tokyotyrant --cflags`
+    PHP_TYRANT_LIBS=`$PKG_CONFIG tokyotyrant --libs`
+    PHP_TYRANT_VERSION=`$PKG_CONFIG tokyotyrant --modversion`
+
+    PHP_EVAL_LIBLINE($PHP_TYRANT_LIBS, TOKYO_TYRANT_SHARED_LIBADD)
+    PHP_EVAL_INCLINE($PHP_TYRANT_INCS)
+    AC_MSG_RESULT([yes, ${PHP_TYRANT_VERSION}])
+  else
+    AC_MSG_RESULT([not found])
+    AC_MSG_ERROR([Please reinstall the Tokyo Tyrant distribution])
+  fi
+
+  AC_MSG_CHECKING([that Tokyo Tyrant is at least version 1.1.24])
+  PHP_TYRANT_VERSION_STRING=`$PKG_CONFIG --atleast-version=1.1.24 tokyotyrant`
+ 
+  if test $? != 0; then
+    AC_MSG_ERROR(no)
+  fi
+  AC_MSG_RESULT(yes)
+
+  PHP_TYRANT_VERSION_MASK=`echo ${PHP_TYRANT_VERSION_STRING} | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  AC_DEFINE_UNQUOTED(PHP_TOKYO_TYRANT_VERSION, ${PHP_TYRANT_VERSION_MASK}, [ ])
 
 dnl Tokyo Cabinet header
 
-  AC_MSG_CHECKING(for tcbdb.h)
-
-  for i in $PHP_TOKYO_CABINET_DIR /usr /usr/local; do
-    test -r $i/include/tcbdb.h && CABINET_PREFIX=$i && break 
-  done
-
-  if test -z $CABINET_PREFIX; then
-    AC_MSG_ERROR(unable to find tcbdb.h)
+  dnl Tokyo Tyrant PKG_CONFIG
+  if test "$PHP_TOKYO_CABINET_DIR" = "yes"; then
+    export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/lib/pkgconfig:/opt/local/lib/pkgconfig
+  else
+    export PKG_CONFIG_PATH=$PHP_TOKYO_CABINET_DIR:$PHP_TOKYO_CABINET_DIR/lib/pkgconfig
   fi
 
-  AC_MSG_RESULT(found in $CABINET_PREFIX/include/tcbdb.h)
+  AC_MSG_CHECKING([for Tokyo Cabinet])
+  if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists tokyocabinet; then
+    PHP_CABINET_INCS=`$PKG_CONFIG tokyocabinet --cflags`
+    PHP_CABINET_LIBS=`$PKG_CONFIG tokyocabinet --libs`
+    PHP_CABINET_VERSION=`$PKG_CONFIG tokyocabinet --modversion`
 
-  PHP_ADD_INCLUDE($TYRANT_PREFIX/include)
-  PHP_ADD_INCLUDE($CABINET_PREFIX/include)
-
-  PHP_ADD_LIBRARY_WITH_PATH(tokyocabinet, $CABINET_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
-  PHP_ADD_LIBRARY_WITH_PATH(tokyotyrant, $TYRANT_PREFIX/lib, TOKYO_TYRANT_SHARED_LIBADD)
-  PHP_SUBST(TOKYO_TYRANT_SHARED_LIBADD)
+    PHP_EVAL_LIBLINE($PHP_CABINET_LIBS, TOKYO_TYRANT_SHARED_LIBADD)
+    PHP_EVAL_INCLINE($PHP_CABINET_INCS)
+    AC_MSG_RESULT([yes, ${PHP_CABINET_VERSION}])
+  else
+    AC_MSG_RESULT([not found])
+    AC_MSG_ERROR([Please reinstall the Tokyo Cabinet distribution])
+  fi
 
   TOKYO_EXT_FILES="tokyo_tyrant.c tokyo_tyrant_funcs.c connection.c"
 
@@ -100,5 +99,8 @@ dnl Tokyo Cabinet header
 
   PHP_NEW_EXTENSION(tokyo_tyrant, $TOKYO_EXT_FILES, $ext_shared)
   AC_DEFINE(HAVE_PHP_TOKYO_TYRANT,1,[ ])
+
+  PHP_SUBST(TOKYO_TYRANT_SHARED_LIBADD)
+  export PKG_CONFIG_PATH="$ORIG_PKG_CONFIG_PATH"
 fi
 
