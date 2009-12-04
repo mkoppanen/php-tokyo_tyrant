@@ -10,18 +10,31 @@ PHP_ARG_ENABLE(tokyo-tyrant-session, whether to enable tokyo tyrant session hand
 if test "$PHP_TOKYO_TYRANT" != "no"; then
 
 dnl Check PHP version
-  AC_MSG_CHECKING(if PHP version is at least 5.2.0)
-  PHP_TT_VERSION=`$PHP_CONFIG --version`; 
-  PHP_TT_VERNUM=`$PHP_CONFIG --vernum`;
 
-  if test $PHP_TT_VERNUM -ge 50200; then
-    AC_MSG_RESULT(found version $PHP_TT_VERSION)
+dnl Get PHP version depending on shared/static build
+
+  AC_MSG_CHECKING([PHP version is at least 5.2.0])
+
+  if test -z "${PHP_VERSION_ID}"; then
+    if test -z "${PHP_CONFIG}"; then
+      AC_MSG_ERROR([php-config not found])
+    fi
+    PHP_TT_FOUND_VERNUM=`${PHP_CONFIG} --vernum`;
+    PHP_TT_FOUND_VERSION=`${PHP_CONFIG} --version`
   else
-    AC_MSG_ERROR(no. You need at least PHP version 5.2.0 to use tokyo_tyrant.)
+    PHP_TT_FOUND_VERNUM="${PHP_VERSION_ID}"
+    PHP_TT_FOUND_VERSION="${PHP_VERSION}"
   fi
 
+  if test "$PHP_TT_FOUND_VERNUM" -ge "50200"; then
+    AC_MSG_RESULT(yes. found $PHP_TT_FOUND_VERSION)
+  else 
+    AC_MSG_ERROR(no. found $PHP_TT_FOUND_VERSION)
+  fi
+
+  
 dnl Add dependency to date extension if PHP >= 5.3.0 is used
-  if test $PHP_TT_VERNUM -ge 50300; then
+  if test $PHP_TT_FOUND_VERNUM -ge 50300; then
     PHP_ADD_EXTENSION_DEP(tokyo_tyrant, date)
   fi
 

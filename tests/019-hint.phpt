@@ -1,11 +1,11 @@
 --TEST--
-Metasearch test
+Hint test
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";
 
 if (!method_exists('TokyoTyrantQuery', 'hint'))
-	die("No hint available");
+	die("skip No hint available");
 ?>
 --FILE--
 <?php

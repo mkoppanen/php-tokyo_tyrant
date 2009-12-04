@@ -123,7 +123,7 @@ zend_bool php_tt_connect_ex(php_tt_conn *conn, char *host, int port, double time
 
 	if (timeout < 0.0) {
 		timeout = TOKYO_G(default_timeout);
-	}
+	} 
 	
 	if (persistent) {
 		options |= RDBTRECON;
@@ -154,22 +154,22 @@ zend_bool php_tt_connect(php_tokyo_tyrant_object *intern, char *host, int port, 
 	double timeout = TOKYO_G(default_timeout);
 	
 	/* Parse args if provided */
-	if (params) {
-		zval **param; 
+	if (params && (Z_TYPE_P(params) == IS_OBJECT || Z_TYPE_P(params) == IS_ARRAY)) {
+		zval **param = NULL;
 
-		if (zend_hash_find(Z_ARRVAL_P(params), "persistent", sizeof("persistent"), (void **) &param) != FAILURE) {
+		if (zend_hash_find(HASH_OF(params), "persistent", sizeof("persistent"), (void **) &param) != FAILURE) {
 			convert_to_boolean_ex(param);
 			persistent = Z_BVAL_PP(param);
 		}
 
-		if (zend_hash_find(Z_ARRVAL_P(params), "timeout", sizeof("timeout"), (void **) &param) != FAILURE) {
+		if (zend_hash_find(HASH_OF(params), "timeout", sizeof("timeout"), (void **) &param) != FAILURE) {
 			convert_to_double_ex(param);
 			if (Z_DVAL_PP(param) > 0) {
 				timeout = Z_DVAL_PP(param);
 			}
 		}
 
-		if (zend_hash_find(Z_ARRVAL_P(params), "reconnect", sizeof("reconnect"), (void **) &param) != FAILURE) {
+		if (zend_hash_find(HASH_OF(params), "reconnect", sizeof("reconnect"), (void **) &param) != FAILURE) {
 			convert_to_boolean_ex(param);
 			if (!(Z_BVAL_PP(param))) {
 				options = 0;

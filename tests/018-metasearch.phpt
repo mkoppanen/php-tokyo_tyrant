@@ -5,7 +5,7 @@ Metasearch test
 include dirname(__FILE__) . "/skipif.inc.php";
 
 if (!method_exists('TokyoTyrantQuery', 'metaSearch'))
-	die("No metasearch available");
+	die("skip No metasearch available");
 ?>
 --FILE--
 <?php
