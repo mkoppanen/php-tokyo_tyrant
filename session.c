@@ -139,7 +139,9 @@ PS_READ_FUNC(tokyo_tyrant)
 
 	/* Try to tokenize session id */
 	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk) TSRMLS_CC)) {
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
+		session->remap         = 1;
+		PS(invalid_session_id) = 1;
+		return FAILURE;
 	}
 	
 	/* Set additional data */
