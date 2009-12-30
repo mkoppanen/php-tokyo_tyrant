@@ -171,6 +171,27 @@ zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *p
 }
 /* }}} */
 
+/* {{{ zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator, zval *parent TSRMLS_DC) */
+zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator, zval *parent TSRMLS_DC)
+{
+	php_tokyo_tyrant_object *db = (php_tokyo_tyrant_object *)zend_object_store_get_object(parent TSRMLS_CC);
+
+	if (!tcrdbiterinit(db->conn->rdb)) {
+		return 0;
+	}
+	
+	iterator->conn   = db->conn;
+	iterator->parent = parent;
+
+#ifdef Z_REFCOUNT_P
+	Z_SET_REFCOUNT_P(parent, Z_REFCOUNT_P(parent) + 1);
+#else
+	parent->refcount++;
+#endif
+	return 1;
+}
+/* }}} */
+
 /* void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC) */
 void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
 {

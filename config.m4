@@ -59,18 +59,18 @@ dnl Tokyo Tyrant parts
   if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists tokyotyrant; then
     PHP_TYRANT_INCS=`$PKG_CONFIG tokyotyrant --cflags`
     PHP_TYRANT_LIBS=`$PKG_CONFIG tokyotyrant --libs`
-    PHP_TYRANT_VERSION=`$PKG_CONFIG tokyotyrant --modversion`
+    PHP_TYRANT_VERSION_STRING=`$PKG_CONFIG tokyotyrant --modversion`
 
     PHP_EVAL_LIBLINE($PHP_TYRANT_LIBS, TOKYO_TYRANT_SHARED_LIBADD)
     PHP_EVAL_INCLINE($PHP_TYRANT_INCS)
-    AC_MSG_RESULT([yes, ${PHP_TYRANT_VERSION}])
+    AC_MSG_RESULT([yes, ${PHP_TYRANT_VERSION_STRING}])
   else
     AC_MSG_RESULT([not found])
     AC_MSG_ERROR([Please reinstall the Tokyo Tyrant distribution])
   fi
 
   AC_MSG_CHECKING([that Tokyo Tyrant is at least version 1.1.24])
-  PHP_TYRANT_VERSION_STRING=`$PKG_CONFIG --atleast-version=1.1.24 tokyotyrant`
+  `$PKG_CONFIG --atleast-version=1.1.24 tokyotyrant`
  
   if test $? != 0; then
     AC_MSG_ERROR(no)
@@ -78,7 +78,7 @@ dnl Tokyo Tyrant parts
   AC_MSG_RESULT(yes)
 
   PHP_TYRANT_VERSION_MASK=`echo ${PHP_TYRANT_VERSION_STRING} | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
-  AC_DEFINE_UNQUOTED(PHP_TOKYO_TYRANT_VERSION, ${PHP_TYRANT_VERSION_MASK}, [ ])
+  AC_DEFINE_UNQUOTED(PHP_TOKYO_TYRANT_VERSION, $PHP_TYRANT_VERSION_MASK, [ ])
 
 dnl Tokyo Cabinet header
 

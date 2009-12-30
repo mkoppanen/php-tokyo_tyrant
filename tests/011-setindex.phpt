@@ -1,6 +1,7 @@
 --TEST--
 Test setting an index on column
 --SKIPIF--
+<?php
 include dirname(__FILE__) . "/skipif.inc.php";
 ?>
 --FILE--

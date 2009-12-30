@@ -57,6 +57,21 @@ typedef struct _php_tokyo_tyrant_query_object  {
 } php_tokyo_tyrant_query_object;
 /* }}} */
 
+/* {{{ typedef struct _php_tokyo_tyrant_iterator_object */
+typedef struct _php_tokyo_tyrant_iterator_object  {
+	zend_object zo;
+	php_tt_conn *conn; /* database connection */
+	zval *parent;
+	
+	char *current;
+	int current_len;
+	
+	/* iterating kv or table? */
+	int iterator_type;
+	
+} php_tokyo_tyrant_iterator_object;
+/* }}} */
+
 ZEND_BEGIN_MODULE_GLOBALS(tokyo_tyrant)
 	HashTable *connections;
 	HashTable *failures;
@@ -85,6 +100,8 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 
 #define PHP_TOKYO_QUERY_OBJECT (php_tokyo_tyrant_query_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
 
+#define PHP_TOKYO_ITERATOR_OBJECT (php_tokyo_tyrant_iterator_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+
 #define PHP_TOKYO_CHAIN_METHOD RETURN_ZVAL(getThis(), 1, 0); 
 
 #define PHP_TOKYO_TYRANT_DEFAULT_PORT 1978
@@ -101,6 +118,9 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 
 #define PHP_TOKYO_TYRANT_RECTYPE_INT    1
 #define PHP_TOKYO_TYRANT_RECTYPE_DOUBLE 2
+
+#define PHP_TOKYO_TYRANT_ITERATOR		1
+#define PHP_TOKYO_TYRANT_TABLE_ITERATOR	2
 
 /* {{{ #define PHP_TOKYO_TYRANT_EXCEPTION(intern, format) */
 #define PHP_TOKYO_TYRANT_EXCEPTION(intern, format) \

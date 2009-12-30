@@ -32,6 +32,8 @@ void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
 
 zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *parent TSRMLS_DC);
 
+zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator, zval *parent TSRMLS_DC);
+
 void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC);
 
 char *php_tt_prefix(char *key, int key_len, int *new_len TSRMLS_DC);

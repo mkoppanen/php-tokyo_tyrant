@@ -34,11 +34,13 @@
 zend_class_entry *php_tokyo_tyrant_sc_entry;
 zend_class_entry *php_tokyo_tyrant_table_sc_entry;
 zend_class_entry *php_tokyo_tyrant_query_sc_entry;
+zend_class_entry *php_tokyo_tyrant_iterator_sc_entry;
 zend_class_entry *php_tokyo_tyrant_exception_sc_entry;
 
 static zend_object_handlers tokyo_tyrant_object_handlers;
 static zend_object_handlers tokyo_tyrant_table_object_handlers;
 static zend_object_handlers tokyo_tyrant_query_object_handlers;
+static zend_object_handlers tokyo_tyrant_iterator_object_handlers;
 
 ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
 
@@ -1039,7 +1041,7 @@ PHP_METHOD(tokyotyranttable, putnr)
 }
 /* }}} */
 
-/* {{{ int TokyoTyrantTable::get(int pk);
+/* {{{ int TokyoTyrantTable::get(mixed pk);
 	Get a table entry
 	@throws TokyoTyrantException if not connected to a database
 	@throws TokyoTyrantException if get fails
@@ -1511,8 +1513,159 @@ PHP_METHOD(tokyotyrantquery, valid)
 
 /******* End query iterator interface *********/
 
-
 /** -------- End Table Query API --------- **/
+
+/** -------- Start tokyo tyrant iterator ------- **/
+
+PHP_METHOD(tokyotyrantiterator, __construct)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+	zval *objvar;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &objvar) == FAILURE) {
+		return;
+	}
+	
+	if (Z_TYPE_P(objvar) != IS_OBJECT) {
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must be a valid TokyoTyrant or TokyoTyrantTable object");
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+	
+	/* Check table first because it's also instanceof the parent */
+	if (instanceof_function(Z_OBJCE_P(objvar), php_tokyo_tyrant_table_sc_entry TSRMLS_CC)) {
+		intern->iterator_type = PHP_TOKYO_TYRANT_TABLE_ITERATOR;
+	} else if (instanceof_function(Z_OBJCE_P(objvar), php_tokyo_tyrant_sc_entry TSRMLS_CC)) {
+		intern->iterator_type = PHP_TOKYO_TYRANT_ITERATOR;
+	} else {
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must be a valid TokyoTyrant or TokyoTyrantTable object");
+	}
+	
+	php_tt_iterator_object_init(intern, objvar TSRMLS_CC);
+	return;
+}
+
+PHP_METHOD(tokyotyrantiterator, key)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+	
+	if (!intern->current) {
+		RETURN_LONG(0);
+	} else {
+		RETURN_STRINGL(intern->current, intern->current_len, 1);
+	}
+}
+
+PHP_METHOD(tokyotyrantiterator, next)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+	
+	if (intern->current) {
+		free(intern->current);
+	}
+
+	intern->current_len = 0;
+	intern->current     = tcrdbiternext(intern->conn->rdb, &(intern->current_len));
+}
+
+PHP_METHOD(tokyotyrantiterator, rewind)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+	
+	/* The iterator has been traversed */
+	if (!tcrdbiterinit(intern->conn->rdb)) { 
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Failed to rewind the iterator");
+	}
+	
+	if (intern->current) {
+		free(intern->current);
+	}
+	
+	intern->current_len = 0;
+	intern->current     = tcrdbiternext(intern->conn->rdb, &(intern->current_len));
+	return;
+}
+
+PHP_METHOD(tokyotyrantiterator, current)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+
+	if (intern->iterator_type == PHP_TOKYO_TYRANT_ITERATOR) {
+
+		char *value, *kbuf;
+		int new_len, value_len;
+
+		kbuf  = php_tt_prefix(intern->current, intern->current_len, &new_len TSRMLS_CC);
+		value = tcrdbget(intern->conn->rdb, kbuf, new_len, &value_len);
+		efree(kbuf);
+		
+		if (!value) {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
+		}
+		RETVAL_STRINGL(value, value_len, 1);
+		free(value);
+		
+	} else if (intern->iterator_type == PHP_TOKYO_TYRANT_TABLE_ITERATOR) {
+		TCMAP *map;
+		char *kbuf;
+		int new_len;
+
+		kbuf = php_tt_prefix(intern->current, intern->current_len, &new_len TSRMLS_CC);	
+		map  = tcrdbtblget(intern->conn->rdb, kbuf, new_len);
+		efree(kbuf);
+
+		if (!map) {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
+		}
+		php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);
+	} else {
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unknown iterator type (this should not happen)");
+	}
+	return;
+}
+
+PHP_METHOD(tokyotyrantiterator, valid)
+{
+	php_tokyo_tyrant_iterator_object *intern;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	intern = PHP_TOKYO_ITERATOR_OBJECT;
+	
+	if (intern->current) {
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+/** -------- End tokyo tyrant iterator ------- **/
+
 
 ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_empty_args, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -1709,6 +1862,22 @@ static function_entry php_tokyo_tyrant_query_class_methods[] =
 	{NULL, NULL, NULL} 
 };
 
+ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_iterator_construct_args, 0, 0, 1)
+	ZEND_ARG_OBJ_INFO(0, TokyoTyrant, TokyoTyrant, 0) 
+ZEND_END_ARG_INFO()
+
+static function_entry php_tokyo_tyrant_iterator_class_methods[] =
+{
+	/* Iterator interface */
+	PHP_ME(tokyotyrantiterator, __construct,	tokyo_tyrant_iterator_construct_args,	ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantiterator, key,			tokyo_tyrant_empty_args, 				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantiterator, next,			tokyo_tyrant_empty_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantiterator, rewind,			tokyo_tyrant_empty_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantiterator, current,		tokyo_tyrant_empty_args,				ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrantiterator, valid,			tokyo_tyrant_empty_args,				ZEND_ACC_PUBLIC)
+	{ NULL, NULL, NULL }
+};
+
 zend_function_entry tokyo_tyrant_functions[] = {
 	{NULL, NULL, NULL} 
 };
@@ -1766,6 +1935,57 @@ static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *cla
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_query_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_query_object_handlers;
+	return retval;
+}
+
+static void php_tokyo_tyrant_iterator_object_free_storage(void *object TSRMLS_DC)
+{
+	php_tokyo_tyrant_iterator_object *intern = (php_tokyo_tyrant_iterator_object *)object;
+
+	if (!intern) {
+		return;
+	}
+	
+	if (intern->current) {
+		free(intern->current);
+	}
+	
+	if (intern->parent) {
+	
+#ifdef Z_REFCOUNT_P
+		Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
+		if (Z_REFCOUNT_P(intern->parent) <= 0) {
+#else
+		intern->parent->refcount--; 
+		if (intern->parent->refcount == 0) {
+#endif		
+	 	/* TODO: check if this leaks */
+			efree(intern->parent);
+		}
+	}
+	zend_object_std_dtor(&intern->zo TSRMLS_CC);
+	efree(intern);
+}
+
+static zend_object_value php_tokyo_tyrant_iterator_object_new(zend_class_entry *class_type TSRMLS_DC)
+{
+	zval *tmp;
+	zend_object_value retval;
+	php_tokyo_tyrant_iterator_object *intern;
+	
+	/* Allocate memory for it */
+	intern = (php_tokyo_tyrant_iterator_object *) emalloc(sizeof(php_tokyo_tyrant_iterator_object));
+	memset(&intern->zo, 0, sizeof(zend_object));
+
+	intern->conn	= NULL;
+	intern->parent	= NULL;
+	intern->current	= NULL;
+
+	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
+	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
+
+	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_iterator_object_free_storage, NULL TSRMLS_CC);
+	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_iterator_object_handlers;
 	return retval;
 }
 
@@ -1828,7 +2048,7 @@ static zend_object_value php_tokyo_tyrant_clone_object(zval *this_ptr TSRMLS_DC)
 
 static PHP_INI_MH(OnUpdateKeyPrefix)
 {
-	if (new_value) {
+	if (new_value_length > 0) {
 		TOKYO_G(key_prefix_len) = new_value_length;
 	} else {
 		TOKYO_G(key_prefix_len) = 0;
@@ -1874,6 +2094,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	memcpy(&tokyo_tyrant_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	memcpy(&tokyo_tyrant_table_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	memcpy(&tokyo_tyrant_query_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
+	memcpy(&tokyo_tyrant_iterator_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	
 	INIT_CLASS_ENTRY(ce, "tokyotyrant", php_tokyo_tyrant_class_methods);
 	ce.create_object = php_tokyo_tyrant_object_new;
@@ -1889,7 +2110,13 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	ce.create_object = php_tokyo_tyrant_query_object_new;
 	tokyo_tyrant_query_object_handlers.clone_obj = NULL;
 	php_tokyo_tyrant_query_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
-	zend_class_implements(php_tokyo_tyrant_query_sc_entry TSRMLS_CC, 1, zend_ce_iterator); 
+	zend_class_implements(php_tokyo_tyrant_query_sc_entry TSRMLS_CC, 1, zend_ce_iterator);
+	
+	INIT_CLASS_ENTRY(ce, "tokyotyrantiterator", php_tokyo_tyrant_iterator_class_methods);
+	ce.create_object = php_tokyo_tyrant_iterator_object_new;
+	tokyo_tyrant_iterator_object_handlers.clone_obj = NULL;
+	php_tokyo_tyrant_iterator_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	zend_class_implements(php_tokyo_tyrant_iterator_sc_entry TSRMLS_CC, 1, zend_ce_iterator);	
 	
 	INIT_CLASS_ENTRY(ce, "tokyotyrantexception", NULL);
 	php_tokyo_tyrant_exception_sc_entry = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C), NULL TSRMLS_CC);
