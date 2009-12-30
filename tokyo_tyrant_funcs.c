@@ -129,19 +129,19 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC)
 /* {{{ void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC) */
 void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 {
+	int name_len;
 	const char *name;
 	array_init(array);
 	
 	tcmapiterinit(map);
-	while ((name = tcmapiternext2(map)) != NULL) {
-		int name_len;
+	while ((name = tcmapiternext(map, &name_len)) != NULL) {
 		const char *buffer;
 		int buffer_len;
 		const char *kbuf = (char *)name;
-		kbuf += TOKYO_G(key_prefix_len);	
-		buffer = tcmapget(map, name, strlen(name), &buffer_len);
+		buffer = tcmapget(map, name, name_len, &buffer_len);
 
 		if (buffer) {
+			kbuf += TOKYO_G(key_prefix_len);
 			add_assoc_stringl(array, (char *)kbuf, (char *)buffer, buffer_len, 1); 
 		}
 	}
@@ -176,6 +176,15 @@ zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator
 {
 	php_tokyo_tyrant_object *db = (php_tokyo_tyrant_object *)zend_object_store_get_object(parent TSRMLS_CC);
 
+	/* Check table first because it's also instanceof the parent */
+	if (instanceof_function(Z_OBJCE_P(parent), php_tokyo_tyrant_table_sc_entry TSRMLS_CC)) {
+		iterator->iterator_type = PHP_TOKYO_TYRANT_TABLE_ITERATOR;
+	} else if (instanceof_function(Z_OBJCE_P(parent), php_tokyo_tyrant_sc_entry TSRMLS_CC)) {
+		iterator->iterator_type = PHP_TOKYO_TYRANT_ITERATOR;
+	} else {
+		return 0;
+	}
+
 	if (!tcrdbiterinit(db->conn->rdb)) {
 		return 0;
 	}
@@ -203,18 +212,22 @@ void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
 		rbuf = tclistval(res, i, &rsiz);
 		cols = tcrdbtblget(rdb, rbuf, rsiz);
 		if (cols) {
+			int name_len;
 			zval *row;
 			tcmapiterinit(cols);
 			
 			MAKE_STD_ZVAL(row);
 			array_init(row);
 			
-			while ((name = tcmapiternext2(cols)) != NULL) {
-				int name_len;
+			while ((name = tcmapiternext(cols, &name_len)) != NULL) {
+				char *data;
+				int data_len;
 				const char *kbuf = name;
-				kbuf += TOKYO_G(key_prefix_len);
+				kbuf     += TOKYO_G(key_prefix_len);
+				name_len -= TOKYO_G(key_prefix_len);
 				
-				add_assoc_string(row, (char *)kbuf, (char *)tcmapget2(cols, name), 1); 
+				data = (char *)tcmapget(cols, name, name_len, &data_len);
+				add_assoc_stringl(row, (char *)kbuf, data, data_len, 1); 
 			}
 			tcmapdel(cols);
 			add_assoc_zval(container, (char *)rbuf, row);

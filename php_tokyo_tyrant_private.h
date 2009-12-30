@@ -169,4 +169,10 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 	efree(buf); \
 } \
 
+extern zend_class_entry *php_tokyo_tyrant_sc_entry;
+extern zend_class_entry *php_tokyo_tyrant_table_sc_entry;
+extern zend_class_entry *php_tokyo_tyrant_query_sc_entry;
+extern zend_class_entry *php_tokyo_tyrant_iterator_sc_entry;
+extern zend_class_entry *php_tokyo_tyrant_exception_sc_entry;
+
 #endif /* _PHP_TOKYO_TYRANT_PRIVATE_H_ */

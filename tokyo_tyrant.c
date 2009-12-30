@@ -351,6 +351,31 @@ PHP_METHOD(tokyotyrant, out)
 }
 /* }}} */
 
+/* {{{ TokyoTyrantIterator TokyoTyrant::getIterator();
+	Get iterator object
+	@throws TokyoTyrantException if not connected to a database
+*/
+PHP_METHOD(tokyotyrant, getiterator) 
+{
+	php_tokyo_tyrant_object *intern;
+	php_tokyo_tyrant_iterator_object *intern_iterator;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+		return;
+	}
+	
+	PHP_TOKYO_CONNECTED_OBJECT(intern);
+	
+	object_init_ex(return_value, php_tokyo_tyrant_iterator_sc_entry);
+	intern_iterator = (php_tokyo_tyrant_iterator_object *)zend_object_store_get_object(return_value TSRMLS_CC); 
+
+	if (!php_tt_iterator_object_init(intern_iterator, getThis() TSRMLS_CC)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Failed to initialize the iterator: %s");
+	}
+	return;
+}
+/* }}} */
+
 /* {{{ mixed TokyoTyrant::get(mixed key);
 	Gets string record(s)
 	@throws TokyoTyrantException if get fails
@@ -1531,17 +1556,9 @@ PHP_METHOD(tokyotyrantiterator, __construct)
 	}
 	
 	intern = PHP_TOKYO_ITERATOR_OBJECT;
-	
-	/* Check table first because it's also instanceof the parent */
-	if (instanceof_function(Z_OBJCE_P(objvar), php_tokyo_tyrant_table_sc_entry TSRMLS_CC)) {
-		intern->iterator_type = PHP_TOKYO_TYRANT_TABLE_ITERATOR;
-	} else if (instanceof_function(Z_OBJCE_P(objvar), php_tokyo_tyrant_sc_entry TSRMLS_CC)) {
-		intern->iterator_type = PHP_TOKYO_TYRANT_ITERATOR;
-	} else {
-		PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must be a valid TokyoTyrant or TokyoTyrantTable object");
+	if (!php_tt_iterator_object_init(intern, objvar TSRMLS_CC)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Failed to initialize the iterator: %s");
 	}
-	
-	php_tt_iterator_object_init(intern, objvar TSRMLS_CC);
 	return;
 }
 
@@ -1783,6 +1800,7 @@ static function_entry php_tokyo_tyrant_class_methods[] =
 	PHP_ME(tokyotyrant, putcat,			tokyo_tyrant_put_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, get,			tokyo_tyrant_get_args,			ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrant, out,			tokyo_tyrant_out_args,			ZEND_ACC_PUBLIC)
+	PHP_ME(tokyotyrant, getiterator,	tokyo_tyrant_empty_args,		ZEND_ACC_PUBLIC)
 	
 	/* These throw exception on table api */
 	PHP_ME(tokyotyrant, add,			tokyo_tyrant_add_args,			ZEND_ACC_PUBLIC)

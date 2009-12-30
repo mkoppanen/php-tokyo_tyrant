@@ -21,8 +21,18 @@ $iterator = new TokyoTyrantIterator($tt);
 foreach ($iterator as $k => $v) {
 	echo "$k => $v\n";
 }
+
+$iterator = $tt->getIterator();
+foreach ($iterator as $k => $v) {
+	echo "$k => $v\n";
+}
+
 ?>
 --EXPECT--
+cherry => red
+strawberry => red
+apple => green
+lemon => yellow
 cherry => red
 strawberry => red
 apple => green
