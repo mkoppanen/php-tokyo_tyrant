@@ -1077,7 +1077,6 @@ PHP_METHOD(tokyotyranttable, get)
 	TCMAP *map;
 	char *key, *kbuf;
 	int key_len, new_len;
-	long rec_len;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
 		return;
@@ -1285,26 +1284,22 @@ PHP_METHOD(tokyotyrantquery, metasearch)
 		zend_hash_move_forward_ex(Z_ARRVAL_P(queries), &pos)) {
 
 		zval **ppzval;
-		zend_bool correct_type = 0;
 
-		if (zend_hash_get_current_data_ex(Z_ARRVAL_P(queries), (void**)&ppzval, &pos) == SUCCESS) {
+		if (zend_hash_get_current_data_ex(Z_ARRVAL_P(queries), (void**)&ppzval, &pos) == SUCCESS &&
+			Z_TYPE_PP(ppzval) == IS_OBJECT &&
+			instanceof_function_ex(Z_OBJCE_PP(ppzval), php_tokyo_tyrant_query_sc_entry, 0 TSRMLS_CC)) {
+
+			php_tokyo_tyrant_query_object *intern_query;
 			zval tmpcopy = **ppzval;
+
 			zval_copy_ctor(&tmpcopy);
 			INIT_PZVAL(&tmpcopy);
 
-			if (Z_TYPE(tmpcopy) == IS_OBJECT) {
-				if (instanceof_function_ex(Z_OBJCE(tmpcopy), php_tokyo_tyrant_query_sc_entry, 0 TSRMLS_CC)) { 
-					php_tokyo_tyrant_query_object *intern_query;
-					intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(&tmpcopy TSRMLS_CC);
-	
-					qrys[i++] = intern_query->qry;
-					correct_type = 1;
-				}
-			}
+			intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(&tmpcopy TSRMLS_CC);
+
+			qrys[i++] = intern_query->qry;
 			zval_dtor(&tmpcopy);
-		}
-	
-		if (!correct_type) {
+		} else {
 			efree(qrys);
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The parameter must contain only TokyoTyrantQuery instances");
 		}
