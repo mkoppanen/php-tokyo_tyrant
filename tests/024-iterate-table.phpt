@@ -1,5 +1,5 @@
 --TEST--
-Iterate table
+Iterate a table storage
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";

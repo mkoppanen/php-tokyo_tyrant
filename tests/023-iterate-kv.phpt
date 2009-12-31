@@ -1,5 +1,5 @@
 --TEST--
-Iterator test
+Iterate a kv storage
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc.php";

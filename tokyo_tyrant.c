@@ -948,8 +948,7 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 	zval *keys;
 	TCMAP *map;
 	char *key = NULL, *kbuf = NULL;
-	int key_len = 0, new_len;
-	int code = 0;
+	int key_len = 0, new_len, code = 0;
 	long pk = -1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!a", &key, &key_len, &keys) == FAILURE) {
@@ -988,6 +987,12 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		
 		case PHP_TOKYO_TYRANT_OP_TBLPUTCAT:
 			code = tcrdbtblputcat(intern->conn->rdb, kbuf, new_len, map);
+		break;
+		
+		default:
+			tcmapdel(map);
+			efree(kbuf);
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unknown operation type (should not happen)");
 		break;
 	}
 
