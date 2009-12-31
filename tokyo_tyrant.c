@@ -190,7 +190,7 @@ static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, 
 	
 	if (hash_key->nKeyLength == 0) {
 		key_buf[0] = '\0';
-		key_len    = sprintf(key_buf, "%ld", hash_key->h);
+		key_len    = snprintf(key_buf, 256, "%ld", hash_key->h);
 		key        = key_buf;
 	} else {
 		key     = hash_key->arKey;
@@ -911,7 +911,9 @@ PHP_METHOD(tokyotyranttable, getquery)
 	object_init_ex(return_value, php_tokyo_tyrant_query_sc_entry);
 	intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(return_value TSRMLS_CC); 
 	
-	php_tt_query_object_init(intern_query, getThis() TSRMLS_CC);
+	if (!php_tt_query_object_init(intern_query, getThis() TSRMLS_CC)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to initialize the query: %s");
+	}
 	return;
 }
 /* }}} */
@@ -934,7 +936,7 @@ PHP_METHOD(tokyotyranttable, genuid)
 	pk = (long)tcrdbtblgenuid(intern->conn->rdb);
 	
 	if (pk == -1) {
-		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate a primary key. Not connected to a table database?");
 	}
 	RETURN_LONG(pk);
 }
@@ -962,10 +964,9 @@ static void _php_tt_table_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		int len;
 		pk = (long)tcrdbtblgenuid(intern->conn->rdb);
 		if (pk == -1) {
-			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate primary key. Not connected to a table database?");
+			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to generate a primary key. Not connected to a table database?");
 		}
-		memset(buf, 0, 256);
-		len = sprintf(buf, "%ld", pk);
+		len = snprintf(buf, 256, "%ld", pk);
 		kbuf = php_tt_prefix(buf, len, &new_len TSRMLS_CC);
 	}
 	
@@ -1150,7 +1151,9 @@ PHP_METHOD(tokyotyrantquery, __construct)
 	}
 	
 	intern = PHP_TOKYO_QUERY_OBJECT;
-	php_tt_query_object_init(intern, objvar TSRMLS_CC);
+	if (!php_tt_query_object_init(intern, objvar TSRMLS_CC)) {
+		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to initialize the query: %s");
+	}
 	return;
 }
 /* }}} */
@@ -1162,25 +1165,21 @@ PHP_METHOD(tokyotyrantquery, setlimit)
 {
 	php_tokyo_tyrant_query_object *intern;
 	zval *max = NULL, *skip = NULL;
-	long l_max, l_skip;
+	long l_max = -1, l_skip = -1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!", &max, &skip) == FAILURE) {
 		return;
 	}
 	intern = PHP_TOKYO_QUERY_OBJECT;
 	
-	if (!max) {
-		l_max = -1;
-	} else {
+	if (max) {
 		if (Z_TYPE_P(max) != IS_LONG) {
 			convert_to_long(max);
 		}
 		l_max = Z_LVAL_P(max);
 	}
 
-	if (!skip) {
-		l_skip = -1;
-	} else {
+	if (skip) {
 		if (Z_TYPE_P(skip) != IS_LONG) {
 			convert_to_long(skip);
 		}
@@ -1370,7 +1369,7 @@ PHP_METHOD(tokyotyrantquery, out)
 	intern = PHP_TOKYO_QUERY_OBJECT;
 	
 	if (!tcrdbqrysearchout(intern->qry)) {
-		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to execute query");
+		PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to execute out query");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
@@ -1400,7 +1399,7 @@ PHP_METHOD(tokyotyrantquery, key)
 			RETURN_FALSE;
 		}
 		
-		RETURN_STRING((char *)rbuf, 1);
+		RETURN_STRINGL((char *)rbuf, rsiz, 1);
 	} else {
 		RETURN_FALSE;
 	}
@@ -1434,11 +1433,16 @@ PHP_METHOD(tokyotyrantquery, next)
 		cols = tcrdbtblget(intern->conn->rdb, rbuf, rsiz);
 		
 		if (cols) {
+			int name_len;
 			array_init(return_value);
 			tcmapiterinit(cols);
 
-			while ((name = tcmapiternext2(cols)) != NULL) {
-				add_assoc_string(return_value, (char *)name, (char *)tcmapget2(cols, name), 1); 
+			while ((name = tcmapiternext(cols, &name_len)) != NULL) {
+				int data_len;
+				const char *data;
+				
+				data = tcmapget(cols, name, name_len, &data_len);
+				add_assoc_stringl(return_value, (char *)name, (char *)data, data_len, 1);
 			}
 			tcmapdel(cols);
 			return;
@@ -1499,11 +1503,16 @@ PHP_METHOD(tokyotyrantquery, current)
 		cols = tcrdbtblget(intern->conn->rdb, rbuf, rsiz);
 		
 		if (cols) {
+			int name_len;
 			array_init(return_value);
 			tcmapiterinit(cols);
 
-			while ((name = tcmapiternext2(cols)) != NULL) {
-				add_assoc_string(return_value, (char *)name, (char *)tcmapget2(cols, name), 1); 
+			while ((name = tcmapiternext(cols, &name_len)) != NULL) {
+				int data_len;
+				const char *data;
+				
+				data = tcmapget(cols, name, name_len, &data_len);
+				add_assoc_stringl(return_value, (char *)name, (char *)data, data_len, 1);
 			}
 			
 			tcmapdel(cols);
@@ -1586,6 +1595,7 @@ PHP_METHOD(tokyotyrantiterator, next)
 	
 	if (intern->current) {
 		free(intern->current);
+		intern->current = NULL;
 	}
 
 	intern->current_len = 0;
@@ -1609,6 +1619,7 @@ PHP_METHOD(tokyotyrantiterator, rewind)
 	
 	if (intern->current) {
 		free(intern->current);
+		intern->current = NULL;
 	}
 	
 	intern->current_len = 0;
