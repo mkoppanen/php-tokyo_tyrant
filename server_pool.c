@@ -87,16 +87,12 @@ php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC)
 	while (pch != NULL) {
 		url = php_url_parse(pch);
 		if (!url) {
-			if (ptr) {
-				efree(ptr);
-			}
-			return NULL;
+			goto failure;
 		}
 		
 		if (!url->host || !url->port) {
-			efree(ptr);
 			php_url_free(url);
-			return NULL;
+			goto failure;
 		}
 		
 		php_tt_pool_append2(pool, url->host, url->port TSRMLS_CC);
@@ -106,6 +102,11 @@ php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC)
 	}
 	efree(ptr);
 	return pool;
+	
+failure:
+	if (ptr)
+		efree(ptr);
+	return NULL;
 }
 
 
@@ -151,6 +152,3 @@ php_tt_server *php_tt_pool_get_server(php_tt_server_pool *pool, int idx TSRMLS_D
 	
 	return pool->servers[idx];
 }
-
-
-

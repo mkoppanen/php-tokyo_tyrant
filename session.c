@@ -81,21 +81,21 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	server = php_tt_pool_get_server(pool, idx TSRMLS_CC);
 	
 	if (!server) {
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Internal error: idx does not map to a server");
+		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Internal error: idx does not map to a server (should not happen)");
 	}
 
 	/* Create connection to the server */
 	conn = php_tt_conn_init(TSRMLS_C);
 	if (!php_tt_connect_ex(conn, server->host, server->port, TOKYO_G(default_timeout), 1 TSRMLS_CC)) {
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Unable to connect to the session server");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unable to connect to the session server");
 	}
 	
 	if (!pk) {
 		pk = php_tt_create_pk(conn, &pk_len TSRMLS_CC);
 	} else {
 		if (!php_tt_sess_touch(conn, current_rand, sess_rand, pk, strlen(pk) TSRMLS_CC)) {
-			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Unable to update the session");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unable to update the session");
 		}
 		efree(current_rand);
 	}
@@ -159,7 +159,10 @@ PS_READ_FUNC(tokyo_tyrant)
 	server = php_tt_pool_get_server(session->pool, session->idx TSRMLS_CC);
 	
 	if (!server) {
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Internal error: idx does not map to a server");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Internal error: idx does not map to a server");
+		session->remap         = 1;
+		PS(invalid_session_id) = 1;
+		return FAILURE;
 	}
 
 	session->conn = php_tt_conn_init(TSRMLS_C);
@@ -202,7 +205,10 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	efree(session->pk);
 	
 	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk) TSRMLS_CC)) {
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "Failed to parse the session id");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse the session id");
+		session->remap         = 1;
+		PS(invalid_session_id) = 1;
+		return FAILURE;
 	}
 	
 	/* Set additional data */
@@ -218,7 +224,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 		server = php_tt_pool_get_server(session->pool, session->idx TSRMLS_CC);
 		php_tt_server_fail_incr(server->host, server->port TSRMLS_CC);
 		
-		/* Remap if the server has been failed */
+		/* Remap if the server has been marked as failed */
 		if (!php_tt_server_ok(server->host, server->port TSRMLS_CC)) {
 			session->remap         = 1;
 			PS(invalid_session_id) = 1;
