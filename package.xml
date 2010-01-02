@@ -15,10 +15,10 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 		<email>mkoppanen@php.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2009-10-22</date>
+	<date>2010-01-02</date>
 	<version>
-		<release>0.1.2</release>
-		<api>0.1.2</api>
+		<release>0.2.0</release>
+		<api>0.2.0</api>
 	</version>
 	<stability>
 		<release>beta</release>
@@ -26,7 +26,9 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</stability>
 	<license uri="http://www.php.net/license">PHP License</license>
 <notes>
-- Make sure that keys and values are binary-safe
+- Warnings instead of fatal errors in session handler
+- Added TokyoTyrantIterator
+- Added getIterator method to TokyoTyrant and TokyoTyrantTable classes
 </notes>
 	<contents>
 		<dir name="/">
