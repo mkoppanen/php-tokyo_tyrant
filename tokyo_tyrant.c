@@ -1081,23 +1081,43 @@ PHP_METHOD(tokyotyranttable, get)
 {
 	php_tokyo_tyrant_object *intern;
 	TCMAP *map;
-	char *key, *kbuf;
-	int key_len, new_len;
+	zval *key;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &key) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);	
-	map = tcrdbtblget(intern->conn->rdb, kbuf, new_len);
-	efree(kbuf);
+	if(Z_TYPE_P(key) == IS_ARRAY){
+		map = php_tt_zval_to_tcmap(key, 1 TSRMLS_CC);
+		tcrdbget3(intern->conn->rdb, map);
+		if (!map) {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the records: %s");
+		}
 
-	if (!map) {
-		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
-	}
+		php_tt_tcmapstring_to_zval(map, return_value TSRMLS_CC);
+		tcmapdel(map);
+	}else{
+		zval tmpcopy;
+		char *kbuf;
+		int new_len;
+		
+		tmpcopy = *key;
+		zval_copy_ctor(&tmpcopy);
+		INIT_PZVAL(&tmpcopy);
+		convert_to_string(&tmpcopy);
 
-	php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);
+		kbuf = php_tt_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);	
+		map = tcrdbtblget(intern->conn->rdb, kbuf, new_len);
+		zval_dtor(&tmpcopy);
+		efree(kbuf);
+
+		if (!map) {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
+		}
+
+		php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);
+		}
 	return;
 }
 /* }}} */

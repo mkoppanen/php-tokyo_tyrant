@@ -141,8 +141,76 @@ void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 		buffer = tcmapget(map, name, name_len, &buffer_len);
 
 		if (buffer) {
-			kbuf += TOKYO_G(key_prefix_len);
-			add_assoc_stringl(array, (char *)kbuf, (char *)buffer, buffer_len, 1); 
+			kbuf     += TOKYO_G(key_prefix_len);
+			name_len -= TOKYO_G(key_prefix_len);
+			add_assoc_stringl_ex(array, (char *)kbuf, name_len + 1, (char *)buffer, buffer_len, 1); 
+		}
+	}
+}
+/* }}} */
+
+/* {{{ static zval* php_tt_ttstring_to_zval(const char* value, int value_len TSRMLS_DC) */
+static zval* php_tt_ttstring_to_zval(const char* value, int value_len TSRMLS_DC)
+{
+	zval *retval;
+	int iskey = 1, key_len = 0;
+	char* pcur = (char*)value;
+	char* key = pcur;
+	char* prev = pcur;
+	char* end = pcur + value_len;
+
+	MAKE_STD_ZVAL(retval);
+	array_init(retval);
+
+	if (!value || value_len < 4) {
+		return retval;
+	}
+
+	if (!(*value) || *end) {
+		return retval;
+	}
+	
+	for (; pcur <= end; pcur++) {
+		if (*pcur) {
+			continue;
+		}
+		if (iskey) {
+			key = prev;
+			if (!(*key)) {
+				break;
+			}
+			iskey = 0;
+		} else {
+			add_assoc_string(retval, (char *)key, (char *)prev, 1);
+			iskey = 1;
+		}
+		prev = pcur + 1;
+	}
+	return retval;
+}
+/* }}} */
+
+
+/* {{{ void php_tt_tcmapstring_to_zval(TCMAP *map, zval *array TSRMLS_DC) */
+void php_tt_tcmapstring_to_zval(TCMAP *map, zval *array TSRMLS_DC)
+{
+	int name_len;
+	const char *name;
+	array_init(array);
+	
+	tcmapiterinit(map);
+	while ((name = tcmapiternext(map, &name_len)) != NULL) {
+		const char *buffer;
+		int buffer_len;
+		
+		buffer = tcmapget(map, name, name_len, &buffer_len);
+
+		if (buffer) {
+			name     += TOKYO_G(key_prefix_len);
+			name_len -= TOKYO_G(key_prefix_len);
+			
+			add_assoc_zval_ex(array, (char *)name, name_len + 1,
+							php_tt_ttstring_to_zval((const char*) buffer, buffer_len TSRMLS_CC));
 		}
 	}
 }
@@ -205,7 +273,7 @@ zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator
 void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
 {
 	const char *rbuf, *name;
-	int i, rsiz;
+	int i, rsiz = 0;
 	TCMAP *cols;
 	
 	for (i = 0; i < tclistnum(res); i++) {
@@ -227,10 +295,10 @@ void php_tt_tclist_to_array(TCRDB *rdb, TCLIST *res, zval *container TSRMLS_DC)
 				name_len -= TOKYO_G(key_prefix_len);
 				
 				data = (char *)tcmapget(cols, name, name_len, &data_len);
-				add_assoc_stringl(row, (char *)kbuf, data, data_len, 1); 
+				add_assoc_stringl_ex(row, (char *)kbuf, name_len + 1, data, data_len, 1); 
 			}
 			tcmapdel(cols);
-			add_assoc_zval(container, (char *)rbuf, row);
+			add_assoc_zval_ex(container, (char *)rbuf, rsiz + 1, row);
 		}
 	}
 }

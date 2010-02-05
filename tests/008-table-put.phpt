@@ -20,6 +20,10 @@ var_dump($tt->get($rec));
 $rec = $tt->putcat($rec, array('col' => 'new item'));
 var_dump($tt->get($rec));
 
+$rec = $tt->put(null, array("test\0data" => "data\0test", 'something' => time()));
+$ret = $tt->get($rec);
+var_dump(strlen($ret["test\0data"]));
+
 try {
 	$tt->putkeep($rec, array());
 	echo "no exception\n";
@@ -53,6 +57,7 @@ array(3) {
   ["col"]=>
   string(8) "new item"
 }
+int(9)
 got exception
 string(3) "foo"
 array(1) {

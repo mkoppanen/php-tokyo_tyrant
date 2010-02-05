@@ -30,6 +30,8 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC);
 
 void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC);
 
+void php_tt_tcmapstring_to_zval(TCMAP *map, zval *array TSRMLS_DC);
+
 zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *parent TSRMLS_DC);
 
 zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator, zval *parent TSRMLS_DC);
