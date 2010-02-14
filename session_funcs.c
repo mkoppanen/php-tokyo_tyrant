@@ -18,7 +18,7 @@
 
 #include "php_tokyo_tyrant_session.h"
 #include "ext/standard/sha1.h"
-
+ 
 php_tt_session *php_tt_session_init(TSRMLS_D) 
 {	
 	php_tt_session *session = emalloc(sizeof(php_tt_session));
