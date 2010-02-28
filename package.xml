@@ -17,8 +17,8 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</lead>
 	<date>2010-01-02</date>
 	<version>
-		<release>0.2.0</release>
-		<api>0.2.0</api>
+		<release>0.3.0</release>
+		<api>0.3.0</api>
 	</version>
 	<stability>
 		<release>beta</release>
@@ -26,9 +26,8 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</stability>
 	<license uri="http://www.php.net/license">PHP License</license>
 <notes>
-- Warnings instead of fatal errors in session handler
-- Added TokyoTyrantIterator
-- Added getIterator method to TokyoTyrant and TokyoTyrantTable classes
+- Added multiget for tables. Thanks to Devin
+- Fixed binary safety on table methods
 </notes>
 	<contents>
 		<dir name="/">
