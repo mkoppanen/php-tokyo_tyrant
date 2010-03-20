@@ -15,7 +15,7 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 		<email>mkoppanen@php.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2010-01-02</date>
+	<date>2010-02-28</date>
 	<version>
 		<release>0.3.0</release>
 		<api>0.3.0</api>
@@ -57,6 +57,7 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 
 			<!-- extra files -->
 			<file name="CREDITS" role="doc" />
+			<file name="LICENSE" role="doc" />
 		</dir>
 	</contents>
 	<dependencies>
