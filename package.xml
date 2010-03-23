@@ -58,6 +58,7 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 			<!-- extra files -->
 			<file name="CREDITS" role="doc" />
 			<file name="LICENSE" role="doc" />
+			<file name="ChangeLog" role="doc" />
 		</dir>
 	</contents>
 	<dependencies>

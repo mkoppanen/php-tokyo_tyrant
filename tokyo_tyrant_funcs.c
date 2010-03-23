@@ -4,9 +4,12 @@
    +----------------------------------------------------------------------+
    | Copyright (c) 2009-2010 Mikko Koppanen                               |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
+   | This source file is dual-licensed.                                   |
+   | It is available under the terms of New BSD License that is bundled   |
+   | with this package in the file LICENSE and available under the terms  |
+   | of PHP license version 3.01. PHP license is bundled with this        |
+   | package in the file LICENSE and can be obtained through the          |
+   | world-wide-web at the following url:                                 |
    | http://www.php.net/license/3_01.txt                                  |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
@@ -153,7 +156,7 @@ void php_tt_tcmap_to_zval(TCMAP *map, zval *array TSRMLS_DC)
 static zval* php_tt_ttstring_to_zval(const char* value, int value_len TSRMLS_DC)
 {
 	zval *retval;
-	int iskey = 1, key_len = 0;
+	int iskey = 1;
 	char* pcur = (char*)value;
 	char* key = pcur;
 	char* prev = pcur;

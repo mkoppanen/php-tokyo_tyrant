@@ -4,9 +4,12 @@
    +----------------------------------------------------------------------+
    | Copyright (c) 2009-2010 Mikko Koppanen                               |
    +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
+   | This source file is dual-licensed.                                   |
+   | It is available under the terms of New BSD License that is bundled   |
+   | with this package in the file LICENSE and available under the terms  |
+   | of PHP license version 3.01. PHP license is bundled with this        |
+   | package in the file LICENSE and can be obtained through the          |
+   | world-wide-web at the following url:                                 |
    | http://www.php.net/license/3_01.txt                                  |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
@@ -711,6 +714,7 @@ PHP_METHOD(tokyotyrant, copy)
 static uint_fast64_t _php_tt_get_ts(zval *date_param TSRMLS_DC) 
 {
 	zval *fname, retval, *params[1];
+	uint_fast64_t ts;
 	
 	MAKE_STD_ZVAL(fname);
 	ZVAL_STRING(fname, "date_timestamp_get", 1);
@@ -721,12 +725,12 @@ static uint_fast64_t _php_tt_get_ts(zval *date_param TSRMLS_DC)
 	zval_dtor(fname);
 	FREE_ZVAL(fname);
 
-	if (Z_TYPE(retval) == IS_BOOL && !Z_BVAL(retval)) {
+	if (Z_TYPE(retval) != IS_LONG) {
 		return 0;
 	}
-
 	/* Microseconds */
-	return (Z_LVAL(retval) * 1000);
+	ts = (uint_fast64_t) Z_LVAL(retval);
+	return (ts * 1000 * 1000);
 }
 
 /* {{{ TokyoTyrant TokyoTyrant::restore(string log_dir, mixed timestamp[, bool check_consistency = true]);
@@ -761,7 +765,7 @@ PHP_METHOD(tokyotyrant, restore)
 		}
 	} else {
 		convert_to_long(date_param);
-		ts = Z_LVAL_P(date_param);
+		ts = (uint_fast64_t) Z_LVAL_P(date_param);
 	}
 	
 	if (check_consistency) {
@@ -783,7 +787,7 @@ PHP_METHOD(tokyotyrant, restore)
 	php_tokyo_tyrant_object *intern;
 	char *path;
 	int path_len, opts;
-	uint_fast64_t ts;
+	long ts;
 	zend_bool check_consistency = 1;
 	
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &path, &path_len, &ts, &check_consistency) == FAILURE) {
@@ -798,7 +802,7 @@ PHP_METHOD(tokyotyrant, restore)
 		opts |= RDBROCHKCON;
 	}
 
-	if (!tcrdbrestore(intern->conn->rdb, path, ts, opts)) {
+	if (!tcrdbrestore(intern->conn->rdb, path, (uint_fast64_t)ts, opts)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to restore the database: %s");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
@@ -878,9 +882,9 @@ PHP_METHOD(tokyotyrant, setmaster)
 	}
 	
 	if (host_len == 0) {
-		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, ts, opts);
+		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, (uint_fast64_t)ts, opts);
 	} else {
-		code = tcrdbsetmst(intern->conn->rdb, host, port, ts, opts);
+		code = tcrdbsetmst(intern->conn->rdb, host, port, (uint_fast64_t)ts, opts);
 	}
 	
 	if (!code) {
