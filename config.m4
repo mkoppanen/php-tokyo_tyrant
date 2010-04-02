@@ -41,7 +41,7 @@ dnl Add dependency to date extension if PHP >= 5.3.0 is used
 dnl Tokyo Tyrant parts
   
   AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-  if test ! -x "$PKG_CONFIG"; then
+  if test "x$PKG_CONFIG" = "xno"; then
     AC_MSG_RESULT([pkg-config not found])
     AC_MSG_ERROR([Please reinstall the pkg-config distribution])
   fi
