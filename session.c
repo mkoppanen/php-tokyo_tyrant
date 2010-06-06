@@ -38,6 +38,7 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	char *current_rand = NULL;
 	char *sess_rand, *sid, *pk = NULL;
 	int idx = -1, pk_len;
+	zend_bool is_regenerated = 0;
 	
 	if (!TOKYO_G(salt)) {
 		php_error_docref(NULL TSRMLS_CC, E_ERROR, "tokyo_tyrant.session_salt needs to be set in order to use the session handler");
@@ -46,14 +47,19 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	/* Session id is being regenerated. Need to copy some data */
 	if (PS(session_status) == php_session_active) {
 		TT_SESS_DATA;
-
-		/* Use old values unless regeneration is forced */
-		if (session->remap == 0) {
-			idx          = session->idx;
-			pk           = estrdup(session->pk);
-			current_rand = estrdup(session->sess_rand);
+		
+		if (!session) {
+			/* This is a situation where session_regenerate_id(TRUE) is called */
+			is_regenerated = 1;
 		} else {
-			session->remap = 0;
+			/* Use old values unless regeneration is forced */
+			if (session->remap == 0) {
+				idx          = session->idx;
+				pk           = estrdup(session->pk);
+				current_rand = estrdup(session->sess_rand);
+			} else {
+				session->remap = 0;
+			}
 		}
 	}
 
@@ -96,6 +102,10 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 	
 	if (!pk) {
 		pk = php_tt_create_pk(conn, &pk_len TSRMLS_CC);
+		
+		if (!pk) {
+			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Unable to create a primary key. Not connected to a table database?");
+		}
 	} else {
 		if (!php_tt_sess_touch(conn, current_rand, sess_rand, pk, strlen(pk) TSRMLS_CC)) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unable to update the session");
@@ -110,6 +120,29 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 
 	php_tt_conn_deinit(conn TSRMLS_CC);
 	php_tt_pool_deinit(pool TSRMLS_CC);
+	
+	/* This is a situation where session_regenerate_id(TRUE) is called */
+	if (is_regenerated) {
+		int ret = ps_open_tokyo_tyrant(mod_data, PS(save_path), PS(session_name) TSRMLS_CC);
+
+		if (ret == SUCCESS) {
+			TT_SESS_DATA;
+			char *dummy_val = NULL;     
+			int val_len = 0;
+
+			ret = ps_read_tokyo_tyrant(mod_data, sid, &dummy_val, &val_len TSRMLS_CC);
+
+			if (ret != SUCCESS) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to read session data during regeneration");
+			}
+
+			if (dummy_val) {
+				efree(dummy_val);
+			}
+		} else {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to open the session during regeneration");
+		}
+	}
 	return sid;
 }
 /* }}} */
@@ -233,11 +266,8 @@ PS_WRITE_FUNC(tokyo_tyrant)
 			PS(invalid_session_id) = 1;
 			return FAILURE;
 		}
-		
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to store session data");
 		return FAILURE;
 	}
-
 	return SUCCESS;
 }
 

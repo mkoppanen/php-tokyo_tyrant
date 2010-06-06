@@ -118,6 +118,10 @@ int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 	php_tt_server *server;
 	int idx = -1;
 	
+	if (pool->num_servers == 0) {
+		return -1;
+	}
+	
 	idx    = php_rand(TSRMLS_C) % pool->num_servers;
 	server = pool->servers[idx];
 	
