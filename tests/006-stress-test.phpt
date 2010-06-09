@@ -2,11 +2,11 @@
 Test put, get and out in a batch
 --SKIPIF--
 <?php
-include dirname(__FILE__) . "/skipif.inc.php";
+include dirname(__FILE__) . "/skipif.inc";
 ?>
 --FILE--
 <?php
-include 'config.inc.php';
+include dirname(__FILE__) . '/config.inc';
 
 $values = 100;
 $tt = new TokyoTyrant(TT_HOST, TT_PORT);

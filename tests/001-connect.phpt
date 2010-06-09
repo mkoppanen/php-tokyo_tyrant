@@ -2,11 +2,11 @@
 Test connect variations
 --SKIPIF--
 <?php
-include dirname(__FILE__) . "/skipif.inc.php";
+include dirname(__FILE__) . "/skipif.inc";
 ?>
 --FILE--
 <?php
-include 'config.inc.php';
+include dirname(__FILE__) . '/config.inc';
 
 $tt = new TokyoTyrant(TT_HOST, TT_PORT, array('persistent' => true));
 $tt->connect(TT_HOST, TT_PORT, array('persistent' => false));

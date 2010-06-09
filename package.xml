@@ -15,10 +15,10 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 		<email>mkoppanen@php.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2010-03-29</date>
+	<date>2010-06-09</date>
 	<version>
-		<release>0.4.0</release>
-		<api>0.4.0</api>
+		<release>0.5.0</release>
+		<api>0.5.0</api>
 	</version>
 	<stability>
 		<release>beta</release>
@@ -26,8 +26,7 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</stability>
 	<license uri="http://www.php.net/license">PHP License</license>
 <notes>
-  - Fix restore method to use correct timestamp precision
-  - Dual license under PHP and BSD licenses
+- Fix crash when session_regenerate_id(true) is called
 </notes>
 	<contents>
 		<dir name="/">

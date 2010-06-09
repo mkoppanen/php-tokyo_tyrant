@@ -2,11 +2,11 @@
 Test string with null char in the middle of value
 --SKIPIF--
 <?php
-include dirname(__FILE__) . "/skipif.inc.php";
+include dirname(__FILE__) . "/skipif.inc";
 ?>
 --FILE--
 <?php
-include 'config.inc.php';
+include dirname(__FILE__) . '/config.inc';
 
 function output_ord($string, $len) {
 	for ($i = 0; $i < $len; $i++) {

@@ -1,0 +1,29 @@
+?.?.?
+
+0.5.0
+- Fix crash when session_regenerate_id(true) is called
+- Fix SIGFPE when no servers are added to the pool
+- Make configure pkg-config checks more robust
+
+0.4.0
+- Fix restore method to use correct timestamp precision
+- Dual license under PHP and BSD licenses
+
+0.3.0  	
+- Added multiget for tables. Thanks to Devin
+- Fixed binary safety on table methods
+
+0.2.0 	
+- Warnings instead of fatal errors in session handler
+- Added TokyoTyrantIterator
+- Added getIterator method to TokyoTyrant and TokyoTyrantTable classes
+
+0.1.2 	
+- Make sure that keys and values are binary-safe
+
+0.1.1 	
+- Disabled timeout by default
+- Added tune method to change the timeout
+
+0.1.0 	
+- Initial release

@@ -2,11 +2,11 @@
 Session handler
 --SKIPIF--
 <?php
-include dirname(__FILE__) . "/skipif.inc.php";
+include dirname(__FILE__) . "/skipif.inc";
 ?>
 --FILE--
 <?php
-include 'config.inc.php';
+include dirname(__FILE__) . '/config.inc';
 
 ini_set("tokyo_tyrant.session_salt", sha1(mt_rand(1, 100)));
 ini_set("session.save_path", sprintf("tcp://%s:%d", TT_TABLE_HOST, TT_TABLE_PORT));

@@ -2,14 +2,14 @@
 Hint test
 --SKIPIF--
 <?php
-include dirname(__FILE__) . "/skipif.inc.php";
+include dirname(__FILE__) . "/skipif.inc";
 
 if (!method_exists('TokyoTyrantQuery', 'hint'))
 	die("skip No hint available");
 ?>
 --FILE--
 <?php
-include 'config.inc.php';
+include dirname(__FILE__) . '/config.inc';
 
 $tt = new TokyoTyrantTable(TT_TABLE_HOST, TT_TABLE_PORT);
 $tt->vanish();
