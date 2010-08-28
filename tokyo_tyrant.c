@@ -245,26 +245,40 @@ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type)
 		}
 		
 	} else {
-		convert_to_string(key);
+		zval key_cp;
 		
+		key_cp = *key;
+		zval_copy_ctor(&key_cp);
+		convert_to_string(&key_cp);
+
 		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), NULL, 0 TSRMLS_CC)) {
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(key_cp), Z_STRLEN(key_cp), NULL, 0 TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to remove the record '%s': %s", 
-										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+										Z_STRVAL(key_cp), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+				zval_dtor(&key_cp);
 				return;
 			}
 		} else {
+			zval value_cp;
+			
 			if (!value) {
 				PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to store the record: no value provided");
 			}
-			convert_to_string(value);
 			
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL_P(key), Z_STRLEN_P(key), Z_STRVAL_P(value), Z_STRLEN_P(value) TSRMLS_CC)) {
+			value_cp = *value;
+			zval_copy_ctor(&value_cp);
+			convert_to_string(&value_cp);
+
+			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(key_cp), Z_STRLEN(key_cp), Z_STRVAL(value_cp), Z_STRLEN(value_cp) TSRMLS_CC)) {
 				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to store the record '%s': %s", 
-										Z_STRVAL_P(key), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+										Z_STRVAL(key_cp), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
+				zval_dtor(&key_cp);
+				zval_dtor(&value_cp);
 				return;
 			}
+			zval_dtor(&value_cp);
 		}
+		zval_dtor(&key_cp);
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
