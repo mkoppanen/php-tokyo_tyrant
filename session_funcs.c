@@ -21,6 +21,8 @@
 
 #include "php_tokyo_tyrant_session.h"
 #include "ext/standard/sha1.h"
+
+#define PHP_TT_CHECKSUM_LEN 41
  
 php_tt_session *php_tt_session_init(TSRMLS_D) 
 {	
@@ -73,34 +75,32 @@ void php_tt_session_deinit(php_tt_session *session TSRMLS_DC)
 	efree(session);
 }
 
-char *php_tt_checksum(char *sess_rand, int idx, char *pk, char *salt) 
+static void php_tt_checksum(char *sess_rand, int idx, char *pk, char *salt, char checksum[PHP_TT_CHECKSUM_LEN]) 
 {	
 	PHP_SHA1_CTX context;
-	char *pk_src;
+	char pk_src[512];
 	int pk_src_len;
 	unsigned char digest[20];
-	char sha1_str[41];
 
 	/* This is what we need to hash */
-	pk_src_len = spprintf(&pk_src, 512, "#%s# #%s# #%d# #%s#", sess_rand, salt, idx, pk);
+	pk_src_len = snprintf(pk_src, 512, "#%s# #%s# #%d# #%s#", sess_rand, salt, idx, pk);
 	
 	/* sha1 hash the pk_src and compare to session_hash */
 	PHP_SHA1Init(&context);
 	PHP_SHA1Update(&context, (unsigned char *)pk_src, pk_src_len);
     PHP_SHA1Final(digest, &context);
 	
-	memset(sha1_str, '\0', 41);
-	make_sha1_digest(sha1_str, digest);
-	
-	efree(pk_src);
-	return estrdup(sha1_str);
+	make_sha1_digest(checksum, digest);
+	checksum[40] = '\0';
 }
 
 char *php_tt_create_sid(char *sess_rand, int idx, char *pk, char *salt) 
 {
-	char *tmp, *buffer = php_tt_checksum(sess_rand, idx, pk, salt);
+	char *tmp, buffer[PHP_TT_CHECKSUM_LEN];
+	
+	php_tt_checksum(sess_rand, idx, pk, salt, buffer);
 	spprintf(&tmp, 512, "%s-%s-%d-%s", sess_rand, buffer, idx, pk);
-	efree(buffer);
+
 	return tmp;
 }
 
@@ -171,15 +171,14 @@ zend_bool php_tt_tokenize(char *session_id, char **sess_rand, char **checksum, i
 zend_bool php_tt_validate(char *sess_rand, char *checksum, int idx, char *pk, char *salt TSRMLS_DC) 
 {
 	int code = 0;
-	char *buffer = NULL;
-	buffer = php_tt_checksum(sess_rand, idx, pk, salt);
+	char buffer[PHP_TT_CHECKSUM_LEN];
+	php_tt_checksum(sess_rand, idx, pk, salt, buffer);
 	
 	if (strlen(checksum) == strlen(buffer)) {
 		if (strcmp(checksum, buffer) == 0) {
 			code = 1;
 		}
 	}
-	efree(buffer);
 	return code;
 }
 

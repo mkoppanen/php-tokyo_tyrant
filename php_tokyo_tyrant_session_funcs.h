@@ -25,8 +25,6 @@ php_tt_session *php_tt_session_init(TSRMLS_D);
 
 void php_tt_session_deinit(php_tt_session *session TSRMLS_DC);
 
-char *php_tt_checksum(char *sess_rand, int idx, char *pk, char *salt TSRMLS_DC);
-
 char *php_tt_create_sid(char *sess_rand, int idx, char *pk, char *salt TSRMLS_DC);
 
 char *php_tt_create_pk(php_tt_conn *conn, int *pk_len TSRMLS_DC);

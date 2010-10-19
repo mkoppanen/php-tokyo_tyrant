@@ -126,7 +126,6 @@ PS_CREATE_SID_FUNC(tokyo_tyrant)
 		int ret = ps_open_tokyo_tyrant(mod_data, PS(save_path), PS(session_name) TSRMLS_CC);
 
 		if (ret == SUCCESS) {
-			TT_SESS_DATA;
 			char *dummy_val = NULL;     
 			int val_len = 0;
 

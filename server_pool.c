@@ -22,7 +22,7 @@
 #include "php_tokyo_tyrant_session.h"
 #include "ext/standard/php_rand.h"
 
-php_tt_server *php_tt_server_init(char *host, int port TSRMLS_DC) 
+static php_tt_server *php_tt_server_init(char *host, int port) 
 {
 	php_tt_server *server = emalloc(sizeof(server));
 	
@@ -32,7 +32,7 @@ php_tt_server *php_tt_server_init(char *host, int port TSRMLS_DC)
 	return server;
 }
 
-void php_tt_server_deinit(php_tt_server *server TSRMLS_DC) 
+static void php_tt_server_deinit(php_tt_server *server TSRMLS_DC) 
 {
 	efree(server->host);
 	efree(server);
@@ -57,10 +57,7 @@ void php_tt_pool_append(php_tt_server_pool *pool, php_tt_server *server TSRMLS_D
 
 void php_tt_pool_append2(php_tt_server_pool *pool, char *host, int port TSRMLS_DC) 
 {
-	php_tt_server *server = emalloc(sizeof(php_tt_server));
-	server->host = estrdup(host);
-	server->port = port;
-	
+	php_tt_server *server = php_tt_server_init(host, port);
 	php_tt_pool_append(pool, server TSRMLS_CC);
 }
 
@@ -111,7 +108,6 @@ failure:
 		efree(ptr);
 	return NULL;
 }
-
 
 int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC)
 {

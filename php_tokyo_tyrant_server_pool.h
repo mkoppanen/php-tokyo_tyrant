@@ -31,10 +31,6 @@ typedef struct _php_tt_server_pool {
 	int num_servers;
 } php_tt_server_pool;
 
-php_tt_server *php_tt_server_init(char *host, int port TSRMLS_DC);
-
-void php_tt_server_deinit(php_tt_server *server TSRMLS_DC);
-
 php_tt_server_pool *php_tt_pool_init(TSRMLS_D);
 
 void php_tt_pool_append(php_tt_server_pool *pool, php_tt_server *server TSRMLS_DC);
