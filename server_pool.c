@@ -24,7 +24,7 @@
 
 static php_tt_server *php_tt_server_init(char *host, int port) 
 {
-	php_tt_server *server = emalloc(sizeof(server));
+	php_tt_server *server = emalloc(sizeof(*server));
 	
 	server->host = estrdup(host);
 	server->port = port;
