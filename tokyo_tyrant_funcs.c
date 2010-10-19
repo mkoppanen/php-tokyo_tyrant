@@ -111,6 +111,7 @@ TCMAP *php_tt_zval_to_tcmap(zval *array, zend_bool value_as_key TSRMLS_DC)
 
 			if (n == HASH_KEY_IS_LONG) {
 				arr_key_len = spprintf(&arr_key, 78, "%ld", num_key);
+				arr_key_len++;
 				allocated = 1;
 			}
 			
