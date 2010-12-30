@@ -238,7 +238,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	efree(session->sess_rand);
 	efree(session->checksum);
 	efree(session->pk);
-	
+
 	if (!php_tt_tokenize((char *)key, &(session->sess_rand), &(session->checksum), &(session->idx), &(session->pk) TSRMLS_CC)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse the session id");
 		session->remap         = 1;
@@ -253,7 +253,7 @@ PS_WRITE_FUNC(tokyo_tyrant)
 	
 	if (!php_tt_validate(session->sess_rand, session->checksum, session->idx, session->pk, TOKYO_G(salt) TSRMLS_CC)) {
 		return FAILURE;
-	}	
+	}
 	
 	if (!php_tt_save_sess_data(session->conn, session->sess_rand, session->pk, strlen(session->pk), val, vallen TSRMLS_CC)) {
 		server = php_tt_pool_get_server(session->pool, session->idx TSRMLS_CC);

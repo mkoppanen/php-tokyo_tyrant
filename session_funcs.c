@@ -196,8 +196,13 @@ char *php_tt_get_sess_data(php_tt_conn *conn, char *sess_rand, const char *pk, i
 		const char *checksum = tcmapget2(cols, "hash");
 		/* Make sure that we get back the expected session */
 		if (strcmp(checksum, sess_rand) == 0) {
-			buffer = estrdup(tcmapget2(cols, "data"));
-			*data_len = strlen(buffer);
+			const char *data;
+			data = tcmapget(cols, "data", sizeof("data") - 1, data_len);
+
+			if (data) {
+				buffer = emalloc(*data_len);
+				memcpy(buffer, data, *data_len);
+			}
 		} else {
 			*mismatch = 1;
 		}
@@ -225,7 +230,7 @@ zend_bool php_tt_save_sess_data(php_tt_conn *conn, char *rand_part, char *pk, in
 	/* store a record */
 	cols = tcmapnew();
 	
-	tcmapput2(cols, "data", data);
+	tcmapput(cols, "data", sizeof("data") - 1, data, data_len);
 	tcmapput2(cols, "hash", rand_part);
 	tcmapput2(cols, "ts",   timestamp);
 
