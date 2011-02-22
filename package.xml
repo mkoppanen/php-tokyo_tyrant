@@ -15,10 +15,10 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 		<email>mkoppanen@php.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2010-06-09</date>
+	<date>2011-02-22</date>
 	<version>
-		<release>0.5.0</release>
-		<api>0.5.0</api>
+		<release>0.6.0</release>
+		<api>0.6.0</api>
 	</version>
 	<stability>
 		<release>beta</release>
@@ -26,7 +26,11 @@ This extension requires Tokyo Cabinet, Tokyo Tyrant and PHP version 5.2.0+.
 	</stability>
 	<license uri="http://www.php.net/license">PHP License</license>
 <notes>
-- Fix crash when session_regenerate_id(true) is called
+- Fixes PECL Bug #18005
+- Fixes PECL Bug #18344
+- Fix memory allocation error
+- Binary safety fixes (Isamu Arimoto)
+- TokyoTyrantTable::put cuts integer key of 2nd argment array.  (Isamu Arimoto)
 </notes>
 	<contents>
 		<dir name="/">
