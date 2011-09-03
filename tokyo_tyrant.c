@@ -1824,7 +1824,7 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_setmaster_args, 0, 0, 3)
 	ZEND_ARG_INFO(0, check_consistency)
 ZEND_END_ARG_INFO()
 
-static function_entry php_tokyo_tyrant_class_methods[] =
+static zend_function_entry php_tokyo_tyrant_class_methods[] =
 {
 	PHP_ME(tokyotyrant, __construct,	tokyo_tyrant_construct_args,	ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(tokyotyrant, connect,		tokyo_tyrant_connect_args,		ZEND_ACC_PUBLIC)
@@ -1864,7 +1864,7 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_table_setindex_args, 0, 0, 2)
 	ZEND_ARG_INFO(0, type)
 ZEND_END_ARG_INFO()
 
-static function_entry php_tokyo_tyrant_table_class_methods[] =
+static zend_function_entry php_tokyo_tyrant_table_class_methods[] =
 {
 	/* Inherit and override */
 	PHP_ME(tokyotyranttable, put,		tokyo_tyrant_put_args,				ZEND_ACC_PUBLIC)
@@ -1908,7 +1908,7 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_query_metasearch_args, 0, 0, 2)
 	ZEND_ARG_INFO(0, type)
 ZEND_END_ARG_INFO()
 
-static function_entry php_tokyo_tyrant_query_class_methods[] =
+static zend_function_entry php_tokyo_tyrant_query_class_methods[] =
 {
 	PHP_ME(tokyotyrantquery, __construct,	tokyo_tyrant_query_construct_args,	ZEND_ACC_PUBLIC)
 	PHP_ME(tokyotyrantquery, addcond,		tokyo_tyrant_query_addcond_args,	ZEND_ACC_PUBLIC)
@@ -1933,7 +1933,7 @@ ZEND_BEGIN_ARG_INFO_EX(tokyo_tyrant_iterator_construct_args, 0, 0, 1)
 	ZEND_ARG_OBJ_INFO(0, TokyoTyrant, TokyoTyrant, 0) 
 ZEND_END_ARG_INFO()
 
-static function_entry php_tokyo_tyrant_iterator_class_methods[] =
+static zend_function_entry php_tokyo_tyrant_iterator_class_methods[] =
 {
 	/* Iterator interface */
 	PHP_ME(tokyotyrantiterator, __construct,	tokyo_tyrant_iterator_construct_args,	ZEND_ACC_PUBLIC)
@@ -1982,9 +1982,20 @@ static void php_tokyo_tyrant_query_object_free_storage(void *object TSRMLS_DC)
 	efree(intern);
 }
 
+/* PHP 5.4 */
+#if PHP_VERSION_ID < 50399
+# define object_properties_init(zo, class_type) { \
+			zval *tmp; \
+			zend_hash_copy((*zo).properties, \
+							&class_type->default_properties, \
+							(copy_ctor_func_t) zval_add_ref, \
+							(void *) &tmp, \
+							sizeof(zval *)); \
+		 }
+#endif
+
 static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *class_type TSRMLS_DC)
 {
-	zval *tmp;
 	zend_object_value retval;
 	php_tokyo_tyrant_query_object *intern;
 
@@ -1998,7 +2009,7 @@ static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *cla
 	intern->parent = NULL;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
+	object_properties_init(intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_query_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_query_object_handlers;
@@ -2049,7 +2060,7 @@ static zend_object_value php_tokyo_tyrant_iterator_object_new(zend_class_entry *
 	intern->current	= NULL;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
+	object_properties_init(intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_iterator_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_iterator_object_handlers;
@@ -2087,7 +2098,7 @@ static zend_object_value php_tokyo_tyrant_object_new_ex(zend_class_entry *class_
 	}
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	zend_hash_copy(intern->zo.properties, &class_type->default_properties, (copy_ctor_func_t) zval_add_ref,(void *) &tmp, sizeof(zval *));
+	object_properties_init(intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_object_handlers;
