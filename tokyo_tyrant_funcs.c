@@ -234,8 +234,8 @@ zend_bool php_tt_query_object_init(php_tokyo_tyrant_query_object *query, zval *p
 	query->conn    = db->conn;
 	query->parent  = parent;
 	query->res     = NULL;
-#ifdef Z_REFCOUNT_P
-	Z_SET_REFCOUNT_P(parent, Z_REFCOUNT_P(parent) + 1);
+#ifdef Z_ADDREF_P
+	Z_ADDREF_P(parent);
 #else
 	parent->refcount++;
 #endif
@@ -264,8 +264,8 @@ zend_bool php_tt_iterator_object_init(php_tokyo_tyrant_iterator_object *iterator
 	iterator->conn   = db->conn;
 	iterator->parent = parent;
 
-#ifdef Z_REFCOUNT_P
-	Z_SET_REFCOUNT_P(parent, Z_REFCOUNT_P(parent) + 1);
+#ifdef Z_ADDREF_P
+	Z_ADDREF_P(parent);
 #else
 	parent->refcount++;
 #endif

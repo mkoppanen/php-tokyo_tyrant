@@ -1958,17 +1958,7 @@ static void php_tokyo_tyrant_query_object_free_storage(void *object TSRMLS_DC)
 	}
 	
 	if (intern->parent) {
-	
-#ifdef Z_REFCOUNT_P
-		Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
-		if (Z_REFCOUNT_P(intern->parent) <= 0) {
-#else
-		intern->parent->refcount--; 
-		if (intern->parent->refcount == 0) {
-#endif		
-	 	/* TODO: check if this leaks */
-			efree(intern->parent);
-		}
+		zval_ptr_dtor(&(intern->parent));
 	}
 	
 	if (intern->res) {
@@ -2009,7 +1999,7 @@ static zend_object_value php_tokyo_tyrant_query_object_new(zend_class_entry *cla
 	intern->parent = NULL;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	object_properties_init(intern->zo, class_type);
+	object_properties_init(&intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_query_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_query_object_handlers;
@@ -2029,17 +2019,7 @@ static void php_tokyo_tyrant_iterator_object_free_storage(void *object TSRMLS_DC
 	}
 	
 	if (intern->parent) {
-	
-#ifdef Z_REFCOUNT_P
-		Z_SET_REFCOUNT_P(intern->parent, Z_REFCOUNT_P(intern->parent) - 1);
-		if (Z_REFCOUNT_P(intern->parent) <= 0) {
-#else
-		intern->parent->refcount--; 
-		if (intern->parent->refcount == 0) {
-#endif		
-	 	/* TODO: check if this leaks */
-			efree(intern->parent);
-		}
+		zval_ptr_dtor(&(intern->parent));
 	}
 	zend_object_std_dtor(&intern->zo TSRMLS_CC);
 	efree(intern);
@@ -2060,7 +2040,7 @@ static zend_object_value php_tokyo_tyrant_iterator_object_new(zend_class_entry *
 	intern->current	= NULL;
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	object_properties_init(intern->zo, class_type);
+	object_properties_init(&intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_iterator_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_iterator_object_handlers;
@@ -2098,7 +2078,7 @@ static zend_object_value php_tokyo_tyrant_object_new_ex(zend_class_entry *class_
 	}
 
 	zend_object_std_init(&intern->zo, class_type TSRMLS_CC);
-	object_properties_init(intern->zo, class_type);
+	object_properties_init(&intern->zo, class_type);
 
 	retval.handle = zend_objects_store_put(intern, NULL, (zend_objects_free_object_storage_t) php_tokyo_tyrant_object_free_storage, NULL TSRMLS_CC);
 	retval.handlers = (zend_object_handlers *) &tokyo_tyrant_object_handlers;
