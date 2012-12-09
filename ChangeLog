@@ -1,3 +1,6 @@
+0.7.0
+- PHP 5.4 support
+
 0.6.0
 - Fix PECL Bug #18344
 
