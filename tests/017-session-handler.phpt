@@ -3,6 +3,8 @@ Session handler
 --SKIPIF--
 <?php
 include dirname(__FILE__) . "/skipif.inc";
+
+if (!function_exists('session_start')) die ("skip");
 ?>
 --FILE--
 <?php

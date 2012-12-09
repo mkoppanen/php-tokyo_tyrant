@@ -1,10 +1,11 @@
 --TEST--
 Test multiget on a table
 --SKIPIF--
---XFAIL--
 <?php
 include dirname(__FILE__) . "/skipif.inc";
 ?>
+--XFAIL--
+This test uses unsupported functionality
 --FILE--
 <?php
 include dirname(__FILE__) . '/config.inc';
