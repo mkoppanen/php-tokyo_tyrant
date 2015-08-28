@@ -1135,7 +1135,8 @@ PHP_METHOD(tokyotyranttable, get)
 		}
 
 		php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);
-		}
+		tcmapdel(map);
+	}
 	return;
 }
 /* }}} */
