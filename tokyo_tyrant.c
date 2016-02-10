@@ -30,20 +30,47 @@
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_interfaces.h"
 
-#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
-# include "ext/date/php_date.h"
-#endif
+#include "ext/date/php_date.h"
 
-zend_class_entry *php_tokyo_tyrant_sc_entry;
-zend_class_entry *php_tokyo_tyrant_table_sc_entry;
-zend_class_entry *php_tokyo_tyrant_query_sc_entry;
-zend_class_entry *php_tokyo_tyrant_iterator_sc_entry;
-zend_class_entry *php_tokyo_tyrant_exception_sc_entry;
+static
+	zend_class_entry *php_tokyo_tyrant_sc_entry;
+static
+	zend_class_entry *php_tokyo_tyrant_table_sc_entry;
+static
+	zend_class_entry *php_tokyo_tyrant_query_sc_entry;
+static
+	zend_class_entry *php_tokyo_tyrant_iterator_sc_entry;
+static
+	zend_class_entry *php_tokyo_tyrant_exception_sc_entry;
+static
+	zend_object_handlers tokyo_tyrant_object_handlers;
 
-static zend_object_handlers tokyo_tyrant_object_handlers;
-static zend_object_handlers tokyo_tyrant_table_object_handlers;
-static zend_object_handlers tokyo_tyrant_query_object_handlers;
-static zend_object_handlers tokyo_tyrant_iterator_object_handlers;
+static
+	zend_object_handlers tokyo_tyrant_table_object_handlers;
+static
+	zend_object_handlers tokyo_tyrant_query_object_handlers;
+static
+	zend_object_handlers tokyo_tyrant_iterator_object_handlers;
+
+static
+inline php_tokyo_tyrant_object *php_tokyo_tyrant_fetch_object(zend_object *obj) {
+	return (php_tokyo_tyrant_object *)((char *)obj - XtOffsetOf(php_tokyo_tyrant_object, zo));
+}
+
+static
+inline php_tokyo_tyrant_query_object *php_tokyo_tyrant_query_fetch_object(zend_object *obj) {
+	return (php_tokyo_tyrant_query_object *)((char *)obj - XtOffsetOf(php_tokyo_tyrant_query_object, zo));
+}
+
+static
+inline php_tokyo_tyrant_iterator_object *php_tokyo_tyrant_iterator_fetch_object(zend_object *obj) {
+	return (php_tokyo_tyrant_iterator_object *)((char *)obj - XtOffsetOf(php_tokyo_tyrant_iterator_object, zo));
+}
+
+#define PHP_TOKYO_OBJECT          php_tokyo_tyrant_fetch_object(Z_OBJ_P(getThis()));
+#define PHP_TOKYO_TABLE_OBJECT    php_tokyo_tyrant_fetch_object(Z_OBJ_P(getThis()));
+#define PHP_TOKYO_QUERY_OBJECT    php_tokyo_tyrant_query_fetch_object(Z_OBJ_P(getThis()));
+#define PHP_TOKYO_ITERATOR_OBJECT php_tokyo_tyrant_iterator_object(Z_OBJ_P(getThis()));
 
 ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
 
@@ -54,17 +81,17 @@ ZEND_DECLARE_MODULE_GLOBALS(tokyo_tyrant);
 PHP_METHOD(tokyotyrant, __construct) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *host = NULL;
-	int host_len, port = PHP_TOKYO_TYRANT_DEFAULT_PORT;
+	zend_string *host;
+	zend_long port = PHP_TOKYO_TYRANT_DEFAULT_PORT;
 	zval *params = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla!", &host, &host_len, &port, &params) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|Sla!", &host, &port, &params) == FAILURE) {
 		return;
 	}
 	
 	intern = PHP_TOKYO_OBJECT;
 
-	if (host && !php_tt_connect(intern, host, port, params TSRMLS_CC)) {
+	if (host && !php_tt_connect(intern, host, port, params)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
 	
@@ -80,17 +107,17 @@ PHP_METHOD(tokyotyrant, __construct)
 PHP_METHOD(tokyotyrant, connect) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *host = NULL;
-	int host_len, port = PHP_TOKYO_TYRANT_DEFAULT_PORT;
+	zend_string *host;
+	zend_long port = PHP_TOKYO_TYRANT_DEFAULT_PORT;
 	zval *params = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|la!", &host, &host_len, &port, &params) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|la!", &host, &port, &params) == FAILURE) {
 		return;
 	}
 	
 	intern = PHP_TOKYO_OBJECT;
 	
-	if (!php_tt_connect(intern, host, port, params TSRMLS_CC)) {
+	if (!php_tt_connect(intern, host, port, params)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
 
@@ -106,11 +133,10 @@ PHP_METHOD(tokyotyrant, connect)
 PHP_METHOD(tokyotyrant, connecturi) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *uri;
-	int uri_len;
+	zend_string *uri;
 	php_url *url;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &uri, &uri_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &uri) == FAILURE) {
 		return;
 	}
 	
@@ -120,7 +146,7 @@ PHP_METHOD(tokyotyrant, connecturi)
 	
 	intern = PHP_TOKYO_OBJECT;
 
-	if (!php_tt_connect2(intern, url TSRMLS_CC)) {
+	if (!php_tt_connect2(intern, url)) {
 		php_url_free(url);
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to connect to database: %s");
 	}
@@ -129,41 +155,48 @@ PHP_METHOD(tokyotyrant, connecturi)
 }
 /* }}} */
 
-/* {{{ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value, int value_len TSRMLS_DC) */
-static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, char *value, int value_len TSRMLS_DC)
+/* {{{ int _php_tt_real_write(TCRDB *rdb, long type, zend_string *key, zend_string *value) */
+static
+int _php_tt_real_write(TCRDB *rdb, long type, zend_string *key, zend_string *value)
 {
 	int code = 0;
-	int new_len;
-	
-	char *kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
+	zend_string *kbuf;
+
+	if (type != PHP_TOKYO_TYRANT_OP_OUT && type != PHP_TOKYO_TYRANT_OP_TBLOUT) {
+		if (!value) {
+			return 0;
+		}
+	}
+
+	kbuf = php_tt_prefix(key);
 
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_OP_PUT:
-			code = tcrdbput(rdb, kbuf, new_len, value, value_len);
+			code = tcrdbput(rdb, kbuf->val, kbuf->len, value->val, value->len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTKEEP:
-			code = tcrdbputkeep(rdb, kbuf, new_len, value, value_len);
+			code = tcrdbputkeep(rdb, kbuf->val, kbuf->len, value->val, value->len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTCAT:
-			code = tcrdbputcat(rdb, kbuf, new_len, value, value_len);
+			code = tcrdbputcat(rdb, kbuf->val, kbuf->len, value->val, value->len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_PUTNR:
-			code = tcrdbputnr(rdb, kbuf, new_len, value, value_len);
+			code = tcrdbputnr(rdb, kbuf->val, kbuf->len, value->val, value->len);
 		break;
 
 		case PHP_TOKYO_TYRANT_OP_OUT:
-			code = tcrdbout(rdb, kbuf, new_len);
+			code = tcrdbout(rdb, kbuf->val, kbuf->len);
 		break;
 		
 		case PHP_TOKYO_TYRANT_OP_TBLOUT:
-			code = tcrdbtblout(rdb, kbuf, new_len);
+			code = tcrdbtblout(rdb, kbuf->val, kbuf->len);
 		break;
 	}
-	efree(kbuf);
+	zend_string_release(kbuf);
 	
 	/* TODO: maybe add strict flag but ignore non-existent keys for now */
 	if (!code) {
@@ -175,110 +208,95 @@ static int _php_tt_real_write(TCRDB *rdb, long type, char *key, int key_len, cha
 }
 /* }}} */
 
-/* {{{ static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key) */
-static int _php_tt_op_many(zval **ppzval TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+/* {{{ static int _php_tt_op_many(zval *zv_value, int num_args, va_list args, zend_hash_key *hash_key) */
+static
+int _php_tt_op_many(zval *zv_value, int num_args, va_list args, zend_hash_key *hash_key)
 {
-	zval tmpcopy;
-	php_tokyo_tyrant_object *intern;
-	int type, *code, key_len;
-	char *key, key_buf[256];
+	TCRDB *rdb;
+	int type, *code, rc;
+	zend_string *key, *value;
 
-    if (num_args != 3) {
+	if (num_args != 3) {
 		return 0;
     }
 
-	intern = va_arg(args, php_tokyo_tyrant_object *);
-	type   = va_arg(args, int);
-	code   = va_arg(args, int *);
-	
-	if (hash_key->nKeyLength == 0) {
-		key_buf[0] = '\0';
-		key_len    = snprintf(key_buf, 256, "%ld", hash_key->h);
-		key        = key_buf;
-	} else {
-		key     = hash_key->arKey;
-		key_len = hash_key->nKeyLength - 1;
+	rdb  = va_arg(args, TCRDB *);
+	type = va_arg(args, int);
+	code = va_arg(args, int *);
+
+	if (!hash_key->key) {
+		smart_str str = {0};
+		smart_str_append_long (&str, (long) hash_key->h);
+		smart_str_0 (&str);
+
+		key = str.s;
+	}
+	else {
+		key = hash_key->key;
+		zend_string_addref(key);
 	}
 
-	tmpcopy = **ppzval;
-	zval_copy_ctor(&tmpcopy);
-	INIT_PZVAL(&tmpcopy);
-	convert_to_string(&tmpcopy);
+	value = zval_get_string(zv_value);
 
-	if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-		*code = _php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), NULL, 0 TSRMLS_CC);
-	} else {
-		*code = _php_tt_real_write(intern->conn->rdb, type, key, key_len, Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy) TSRMLS_CC);
+	switch (type) {
+
+		case PHP_TOKYO_TYRANT_OP_OUT:
+		case PHP_TOKYO_TYRANT_OP_TBLOUT:
+			/* Value as key */
+			rc = _php_tt_real_write(intern->conn->rdb, type, value, NULL);
+		break;
+
+		default:
+			rc = _php_tt_real_write(intern->conn->rdb, type, key, value);
+		break;
 	}
 
-	zval_dtor(&tmpcopy);
-	
-	if (!(*code)) {
+	*code = rc;
+
+	if (!rc) {
 		return ZEND_HASH_APPLY_STOP;
 	}
 	return ZEND_HASH_APPLY_KEEP;
 }
-/* }}} */
+
 
 /* {{{ static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) */
 static void _php_tt_write_wrapper(INTERNAL_FUNCTION_PARAMETERS, long type) 
 {
 	php_tokyo_tyrant_object *intern;
-	zval *key, *value = NULL;
-	int code;
+	zval *zv_key, *zv_value = NULL;
+	int code = 0;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z!", &key, &value) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|z!", &zv_key, &zv_value) == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	if (Z_TYPE_P(key) == IS_ARRAY) {
-		zend_hash_apply_with_arguments(Z_ARRVAL_P(key) TSRMLS_CC, (apply_func_args_t) _php_tt_op_many, 3, intern, type, &code);
-		
-		if (!code) {
-			if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to remove the records: %s");
-			} else {
-				PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to put the records: %s");
-			}
-		}
-		
-	} else {
-		zval key_cp;
-		
-		key_cp = *key;
-		zval_copy_ctor(&key_cp);
-		convert_to_string(&key_cp);
+	if (Z_TYPE_P(zv_key) == IS_ARRAY) {
+		zend_hash_apply_with_arguments(Z_ARRVAL_P(zv_key), _php_tt_op_many, 3, intern->conn->rdb, type, &code);
+	}
+	else {
+		zend_string *key   = zval_get_string (zv_key);
+		zend_string *value = zv_value ? zval_get_string (zv_value) : NULL;
 
-		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(key_cp), Z_STRLEN(key_cp), NULL, 0 TSRMLS_CC)) {
-				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to remove the record '%s': %s", 
-										Z_STRVAL(key_cp), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
-				zval_dtor(&key_cp);
-				return;
-			}
-		} else {
-			zval value_cp;
-			
+		if (type != PHP_TOKYO_TYRANT_OP_OUT && type != PHP_TOKYO_TYRANT_OP_TBLOUT) {
 			if (!value) {
-				PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unable to store the record: no value provided");
+				PHP_TOKYO_TYRANT_EXCEPTION(intern, "No value provided");
 			}
-			
-			value_cp = *value;
-			zval_copy_ctor(&value_cp);
-			convert_to_string(&value_cp);
-
-			if (!_php_tt_real_write(intern->conn->rdb, type, Z_STRVAL(key_cp), Z_STRLEN(key_cp), Z_STRVAL(value_cp), Z_STRLEN(value_cp) TSRMLS_CC)) {
-				zend_throw_exception_ex(php_tokyo_tyrant_exception_sc_entry, tcrdbecode(intern->conn->rdb) TSRMLS_CC, "Unable to store the record '%s': %s", 
-										Z_STRVAL(key_cp), tcrdberrmsg(tcrdbecode(intern->conn->rdb)));
-				zval_dtor(&key_cp);
-				zval_dtor(&value_cp);
-				return;
-			}
-			zval_dtor(&value_cp);
 		}
-		zval_dtor(&key_cp);
+		code = _php_tt_real_write(intern->conn->rdb, type, key, value);
+
+		zend_string_release(key);
+		zend_string_release(value);
+	}
+
+	if (!code) {
+		if (type == PHP_TOKYO_TYRANT_OP_OUT || type == PHP_TOKYO_TYRANT_OP_TBLOUT) {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to remove the records: %s");
+		} else {
+			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to put the records: %s");
+		}
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
@@ -336,20 +354,19 @@ PHP_METHOD(tokyotyrant, putnr)
 PHP_METHOD(tokyotyrant, putshl) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *kbuf, *key, *value;
-	int code, key_len, value_len, new_len;
-	long width;
+	zend_string *key, *value, *with_prefix;
+	zend_long width;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &key, &key_len, &value, &value_len, &width) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "SSl", &key, &value, &width) == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	/* Create a prefix */
-	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
-	code = tcrdbputshl(intern->conn->rdb, kbuf, new_len, value, value_len, width);
-	efree(kbuf);
+	with_prefix = php_tt_prefix(key);
+	code = tcrdbputshl(intern->conn->rdb, with_prefix->val, with_prefix->len, value->val, value->len, width);
+	zend_string_release(with_prefix);
 	
 	if (!code) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to putshl the record: %s");
@@ -377,7 +394,7 @@ PHP_METHOD(tokyotyrant, getiterator)
 	php_tokyo_tyrant_object *intern;
 	php_tokyo_tyrant_iterator_object *intern_iterator;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 	
@@ -386,7 +403,7 @@ PHP_METHOD(tokyotyrant, getiterator)
 	object_init_ex(return_value, php_tokyo_tyrant_iterator_sc_entry);
 	intern_iterator = (php_tokyo_tyrant_iterator_object *)zend_object_store_get_object(return_value TSRMLS_CC); 
 
-	if (!php_tt_iterator_object_init(intern_iterator, getThis() TSRMLS_CC)) {
+	if (!php_tt_iterator_object_init(intern_iterator, getThis())) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Failed to initialize the iterator: %s");
 	}
 	return;
@@ -400,44 +417,44 @@ PHP_METHOD(tokyotyrant, getiterator)
 PHP_METHOD(tokyotyrant, get) 
 {
 	php_tokyo_tyrant_object *intern;
-	zval *key;
+	zval *zv_key;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &key) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &zv_key) == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (Z_TYPE_P(key) == IS_ARRAY) {
-		TCMAP *map = php_tt_zval_to_tcmap(key, 1 TSRMLS_CC);
+		TCMAP *map = php_tt_zval_to_tcmap(zv_key, 1);
 		tcrdbget3(intern->conn->rdb, map);
 
 		if (!map) {
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the records: %s");
 		}
 
-		php_tt_tcmap_to_zval(map, return_value TSRMLS_CC);		
+		php_tt_tcmap_to_zval(map, return_value);		
 		tcmapdel(map);
 	} else {
-		zval tmpcopy;
-		char *value, *kbuf;
-		int new_len, value_len;
-		
-		tmpcopy = *key;
-		zval_copy_ctor(&tmpcopy);
-		INIT_PZVAL(&tmpcopy);
-		convert_to_string(&tmpcopy);
-	
-		kbuf = php_tt_prefix(Z_STRVAL(tmpcopy), Z_STRLEN(tmpcopy), &new_len TSRMLS_CC);
-		value = tcrdbget(intern->conn->rdb, kbuf, new_len, &value_len);
-		zval_dtor(&tmpcopy);
-		efree(kbuf);
-		
-		if (!value) {
+		char *buffer;
+		int buffer_len = 0;
+
+		zend_string *with_prefix, *key;
+
+		key = zval_get_string (zv_key);
+		with_prefix = php_tt_prefix(key);
+
+		buffer = tcrdbget(intern->conn->rdb, with_prefix->val, with_prefix->len, &buffer_len);
+
+		zend_string_release(key);
+		zend_string_release(with_prefix);
+
+		if (!buffer) {
 			PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record: %s");
 		}
-		RETVAL_STRINGL(value, value_len, 1);
-		free(value);
+
+		RETVAL_STRINGL(buffer, buffer_len);
+		free(buffer);
 	}
 	return;
 }
@@ -450,6 +467,10 @@ PHP_METHOD(tokyotyrant, get)
 PHP_METHOD(tokyotyrant, add) 
 {
 	php_tokyo_tyrant_object *intern;
+	zend_string *key, *with_prefix;
+	zval *zv_value;
+	zend_bool status = 1;
+
 	char *key, *kbuf;
 	int key_len = 0, new_len, retint;
 	long type = 0;
@@ -457,13 +478,13 @@ PHP_METHOD(tokyotyrant, add)
 	
 	double retdouble;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|l", &key, &key_len, &value, &type) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sz|l", &key, &zv_value, &type) == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
+	with_prefix = php_tt_prefix(key);
 
 	if (type == 0) {
 		if (Z_TYPE_P(value) == IS_DOUBLE) {
@@ -476,29 +497,32 @@ PHP_METHOD(tokyotyrant, add)
 	switch (type) {
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_INT:
-			convert_to_long(value);
-			retint = tcrdbaddint(intern->conn->rdb, kbuf, new_len, Z_LVAL_P(value));
-			if (retint == INT_MIN) {
-				RETURN_NULL();
+		{
+			zend_long val = zval_get_long (zv_value);
+			retint = tcrdbaddint(intern->conn->rdb, with_prefix->key, with_prefix->len, val);
+			if (retint != INT_MIN) {
+				RETVAL_LONG(retint);
 			}
-			RETVAL_LONG(retint);
+		}
 		break;
 		
 		case PHP_TOKYO_TYRANT_RECTYPE_DOUBLE:
-			convert_to_double(value);
-			retdouble = tcrdbadddouble(intern->conn->rdb, kbuf, new_len, Z_DVAL_P(value));
-			if (isnan(retdouble)) {
-				RETURN_NULL();
+		{
+			double val = zval_get_long (zv_value);
+			retdouble = tcrdbadddouble(intern->conn->rdb, with_prefix->key, with_prefix->len, val);
+			if (!isnan(retdouble)) {
+				RETVAL_DOUBLE(retdouble);
 			}
-			RETVAL_DOUBLE(retdouble);
+		}
 		break;
 		
 		default:
-			efree(kbuf);
+			zend_string_release(with_prefix);
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Unknown record type");
 		break;	
 	}
-	efree(kbuf);
+
+	zend_string_release(with_prefix);
 	return;
 }
 /* }}} */
@@ -511,7 +535,7 @@ PHP_METHOD(tokyotyrant, sync)
 {
 	php_tokyo_tyrant_object *intern;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none(ZEND_NUM_ARGS()) == FAILURE) {
 		return;
 	}
 	
@@ -531,9 +555,9 @@ PHP_METHOD(tokyotyrant, tune)
 {
 	php_tokyo_tyrant_object *intern;
 	double timeout;
-	long options = RDBTRECON;
+	zend_long options = RDBTRECON;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d|l", &timeout, &options) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "d|l", &timeout, &options) == FAILURE) {
 		return;
 	}
 	
@@ -552,7 +576,7 @@ PHP_METHOD(tokyotyrant, vanish)
 {
 	php_tokyo_tyrant_object *intern;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none(ZEND_NUM_ARGS()) == FAILURE) {
 		return;
 	}
 	
@@ -570,10 +594,9 @@ PHP_METHOD(tokyotyrant, vanish)
 PHP_METHOD(tokyotyrant, stat) 
 {
 	php_tokyo_tyrant_object *intern;
-	char *status = NULL, *ptr;
-	char k[1024], v[1024];
+	char *status, *ptr, *last = NULL;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none(ZEND_NUM_ARGS()) == FAILURE) {
 		return;
 	}
 	
@@ -587,19 +610,18 @@ PHP_METHOD(tokyotyrant, stat)
 	array_init(return_value);
 	
 	/* add elements */
-	ptr = strtok(status, "\n");
+	ptr = php_strtok_r(status, "\n", &last);
 	while (ptr) {
-		if (strlen(ptr) >= 1024) {
-			continue;
-		}
-		memset(k, '\0', 1024);
-		memset(v, '\0', 1024);
+		char *c;
 
-		if (sscanf(ptr, "%s %s", k, v) != 2) {
-			continue;
+		if ((c = strchr(ptr, ' ') != NULL) {
+
+			char *key = ptr;
+			char *value = c + 1;
+
+			add_assoc_stringl_ex(return_value, key, ptr - value, value, strlen(value));
 		}
-		add_assoc_string(return_value, k, v, 1);
-		ptr = strtok(NULL, "\n");
+		ptr = php_strtok_r(NULL, "\n", &last);
 	}
 	free(status);
 	return;
@@ -612,18 +634,17 @@ PHP_METHOD(tokyotyrant, stat)
 PHP_METHOD(tokyotyrant, size)
 {
 	php_tokyo_tyrant_object *intern;
-	char *key, *kbuf;
-	int key_len, new_len;
-	long rec_len;
+	zend_string *key, *with_prefix;
+	zend_long rec_len;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &key_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &key) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
-	kbuf = php_tt_prefix(key, key_len, &new_len TSRMLS_CC);
-	rec_len = tcrdbvsiz2(intern->conn->rdb, kbuf);
-	efree(kbuf);
+	with_prefix = php_tt_prefix(key);
+	rec_len = tcrdbvsiz2(intern->conn->rdb, with_prefix->val);
+	zend_string_release(with_prefix);
 	
 	if (rec_len == -1) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to get the record size: %s");
@@ -639,7 +660,7 @@ PHP_METHOD(tokyotyrant, num)
 {
 	php_tokyo_tyrant_object *intern;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
@@ -651,26 +672,31 @@ PHP_METHOD(tokyotyrant, num)
 PHP_METHOD(tokyotyrant, fwmkeys)
 {
 	php_tokyo_tyrant_object *intern;
-	char *prefix, *kbuf;
-	int prefix_len, new_len;
+	zend_string *prefix;
+
 	long max_recs;
 	TCLIST *res = NULL;
 	const char *rbuf;
 	int i, rsiz;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &prefix, &prefix_len, &max_recs) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sl", &prefix, &max_recs) == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
-	res = tcrdbfwmkeys2(intern->conn->rdb, prefix, max_recs);
+	res = tcrdbfwmkeys2(intern->conn->rdb, prefix->val, max_recs);
 
 	array_init(return_value);
 	
 	for (i = 0; i < tclistnum(res); i++) {
+
+		zend_string *with_prefix;
+
 		rbuf = tclistval(res, i, &rsiz);
-		kbuf = php_tt_prefix((char *)rbuf, rsiz, &new_len TSRMLS_CC);
-		add_next_index_stringl(return_value, kbuf, new_len, 0);
+		with_prefix = php_tt_prefix(prefix);
+
+		add_next_index_stringl(return_value, with_prefix->val, with_prefix->len);
+		zend_string_release(with_prefix);
 	}
 	
 	tclistdel(res);
@@ -684,20 +710,20 @@ PHP_METHOD(tokyotyrant, fwmkeys)
 PHP_METHOD(tokyotyrant, ext)
 {
 	php_tokyo_tyrant_object *intern;
-	char *name, *key, *value, *response;
-	int name_len, key_len, value_len;
-	long opts;
+	zend_string *name, *key, *value;
+	zend_long opts;
+	char *response;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slss", &name, &name_len, &opts, &key, &key_len, &value, &value_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "SlSS", &name, &opts, &key, &value) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
-	response = tcrdbext2(intern->conn->rdb, name, opts, key, value);
+	response = tcrdbext2(intern->conn->rdb, name->val, opts, key->val, value->val);
 
 	if (!response) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to execute the remote script: %s");
 	}
-	RETVAL_STRING(response, 1);
+	RETVAL_STRING(response);
 	free(response);
 	return;
 }
@@ -709,41 +735,40 @@ PHP_METHOD(tokyotyrant, ext)
 PHP_METHOD(tokyotyrant, copy)
 {
 	php_tokyo_tyrant_object *intern;
-	char *path;
-	int path_len;
+	zend_string *path;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &path_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &path) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 
-	if (!tcrdbcopy(intern->conn->rdb, path)) {
+	if (!tcrdbcopy(intern->conn->rdb, path->val)) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to copy the database: %s");
 	}
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
 
-#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
-static uint_fast64_t _php_tt_get_ts(zval *date_param TSRMLS_DC) 
+static
+uint64_t _php_tt_get_ts(zval *date_param) 
 {
-	zval *fname, retval, *params[1];
-	uint_fast64_t ts;
-	
-	MAKE_STD_ZVAL(fname);
-	ZVAL_STRING(fname, "date_timestamp_get", 1);
+	zval retval, fname, params[1];
+	uint64_t ts;
 
-	params[0] = date_param;
+	ZVAL_STRING(&fname, "date_timestamp_get");
+	ZVAL_COPY(&params[0], date_param);
 
-	call_user_function(EG(function_table), NULL, fname, &retval, 1, params TSRMLS_CC);
-	zval_dtor(fname);
-	FREE_ZVAL(fname);
+	if (call_user_function(EG(function_table), NULL, fname, &retval, 1, params) == FAILURE) {
+		zval_ptr_dtor(&fname);
+		return 0;
+	}
+	zval_ptr_dtor(&fname);
 
 	if (Z_TYPE(retval) != IS_LONG) {
 		return 0;
 	}
 	/* Microseconds */
-	ts = (uint_fast64_t) Z_LVAL(retval);
+	ts = (uint64_t) Z_LVAL(retval);
 	return (ts * 1000 * 1000);
 }
 
@@ -752,24 +777,21 @@ static uint_fast64_t _php_tt_get_ts(zval *date_param TSRMLS_DC)
 */
 PHP_METHOD(tokyotyrant, restore)
 {
-	zval *date_param;
 	php_tokyo_tyrant_object *intern;
-	char *path;
-	int path_len, opts;
-	uint_fast64_t ts;
+	zval *date_param;
+	zend_string *path;
+	int opts;
+	uint64_t ts;
 	zend_bool check_consistency = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|b", &path, &path_len, &date_param, &check_consistency) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sz|b", &path, &date_param, &check_consistency) == FAILURE) {
 		return;
 	}
-#if !defined(__LP64__) && !defined(__ILP64__)
-	PHP_TOKYO_TYRANT_EXCEPTION_MSG("TokyoTyrant::restore is not supported on a 32bit platform");
-#endif
+
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	if (Z_TYPE_P(date_param) == IS_OBJECT) {
-		zend_class_entry *date_ce_date = php_date_get_date_ce();
-		if (!instanceof_function_ex(Z_OBJCE_P(date_param), date_ce_date, 0 TSRMLS_CC)) { 
+		if (!instanceof_function_ex(Z_OBJCE_P(date_param), php_date_get_date_ce(), 0)) { 
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The timestamp parameter must be instanceof DateTime");
 		}
 
@@ -779,7 +801,7 @@ PHP_METHOD(tokyotyrant, restore)
 		}
 	} else {
 		convert_to_long(date_param);
-		ts = (uint_fast64_t) Z_LVAL_P(date_param);
+		ts = (uint64_t) Z_LVAL_P(date_param);
 	}
 	
 	if (check_consistency) {
@@ -792,80 +814,48 @@ PHP_METHOD(tokyotyrant, restore)
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
-#else 
-/* {{{ TokyoTyrant TokyoTyrant::restore(string log_dir, int timestamp[, bool check_consistency = true]);
-	restore the database
-*/
-PHP_METHOD(tokyotyrant, restore)
-{
-	php_tokyo_tyrant_object *intern;
-	char *path;
-	int path_len, opts;
-	long ts;
-	zend_bool check_consistency = 1;
-	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|b", &path, &path_len, &ts, &check_consistency) == FAILURE) {
-		return;
-	}
-#if !defined(__LP64__) && !defined(__ILP64__)
-	PHP_TOKYO_TYRANT_EXCEPTION_MSG("TokyoTyrant::restore is not supported on a 32bit platform");
-#endif	
-	PHP_TOKYO_CONNECTED_OBJECT(intern);
-	
-	if (check_consistency) {
-		opts |= RDBROCHKCON;
-	}
 
-	if (!tcrdbrestore(intern->conn->rdb, path, (uint_fast64_t)ts, opts)) {
-		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to restore the database: %s");
-	}
-	PHP_TOKYO_CHAIN_METHOD;
-}
-/* }}} */
-#endif
-
-#if PHP_MAJOR_VERSION >=5 && PHP_MINOR_VERSION >= 3
 /* {{{ TokyoTyrant TokyoTyrant::setMaster(string host, int port, mixed timestamp[, zend_bool check_consistency]);
 	Set the master
 */
 PHP_METHOD(tokyotyrant, setmaster)
 {
-	zval *date_param;
+
 	php_tokyo_tyrant_object *intern;
-	char *host;
-	int host_len, code, opts;
-	long port;
-	uint_fast64_t ts;
+	zval *date_param;
+	zend_string *host;
+	int opts;
+	zend_long port;
+	uint64_t ts;
 	zend_bool check_consistency = 1;
+
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz|b", &host, &host_len, &port, &date_param, &check_consistency) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Slz|b", &host, &port, &date_param, &check_consistency) == FAILURE) {
 		return;
 	}
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 
 	if (Z_TYPE_P(date_param) == IS_OBJECT) {
-		zend_class_entry *date_ce_date = php_date_get_date_ce();
-		if (!instanceof_function_ex(Z_OBJCE_P(date_param), date_ce_date, 0 TSRMLS_CC)) { 
+		if (!instanceof_function_ex(Z_OBJCE_P(date_param), php_date_get_date_ce(), 0)) { 
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("The timestamp parameter must be instanceof DateTime");
 		}
 
-		ts = _php_tt_get_ts(date_param TSRMLS_CC);
+		ts = _php_tt_get_ts(date_param);
 		if (ts == 0) {
 			PHP_TOKYO_TYRANT_EXCEPTION_MSG("Failed to get timestamp from the DateTime object");
 		}
 	} else {
-		convert_to_long(date_param);
-		ts = Z_LVAL_P(date_param);
+		ts = zval_get_long(date_param);
 	}
 
 	if (check_consistency) {
 		opts |= RDBROCHKCON;
 	}
 	
-	if (host_len == 0) {
+	if (!host->len) {
 		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, ts, opts);
 	} else {
-		code = tcrdbsetmst(intern->conn->rdb, host, port, ts, opts);
+		code = tcrdbsetmst(intern->conn->rdb, host->val, port, ts, opts);
 	}
 	
 	if (!code) {
@@ -874,40 +864,7 @@ PHP_METHOD(tokyotyrant, setmaster)
 	PHP_TOKYO_CHAIN_METHOD;
 }
 /* }}} */
-#else
-/* {{{ TokyoTyrant TokyoTyrant::setMaster(string host, int port, int timestamp[, zend_bool check_consistency]);
-	Set the master
-*/
-PHP_METHOD(tokyotyrant, setmaster)
-{
-	php_tokyo_tyrant_object *intern;
-	char *host;
-	int host_len, code;
-	long ts, opts = 0, port;
-	zend_bool check_consistency = 1;
-	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll|b", &host, &host_len, &port, &ts, &check_consistency) == FAILURE) {
-		return;
-	}
-	PHP_TOKYO_CONNECTED_OBJECT(intern);
 
-	if (check_consistency) {
-		opts |= RDBROCHKCON;
-	}
-	
-	if (host_len == 0) {
-		code = tcrdbsetmst(intern->conn->rdb, NULL, 0, (uint_fast64_t)ts, opts);
-	} else {
-		code = tcrdbsetmst(intern->conn->rdb, host, port, (uint_fast64_t)ts, opts);
-	}
-	
-	if (!code) {
-		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to set the master: %s");
-	}
-	PHP_TOKYO_CHAIN_METHOD;
-}
-/* }}} */
-#endif
 
 /** -------- Begin table api -------- **/
 
@@ -920,16 +877,16 @@ PHP_METHOD(tokyotyranttable, getquery)
 	php_tokyo_tyrant_object *intern;
 	php_tokyo_tyrant_query_object *intern_query;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 	
 	PHP_TOKYO_CONNECTED_OBJECT(intern);
 	
 	object_init_ex(return_value, php_tokyo_tyrant_query_sc_entry);
-	intern_query = (php_tokyo_tyrant_query_object *)zend_object_store_get_object(return_value TSRMLS_CC); 
-	
-	if (!php_tt_query_object_init(intern_query, getThis() TSRMLS_CC)) {
+	intern_query = php_tokyo_tyrant_fetch_query_object(Z_OBJ_P(return_value));
+
+	if (!php_tt_query_object_init(intern_query, getThis())) {
 		PHP_TOKYO_TYRANT_EXCEPTION(intern, "Unable to initialize the query: %s");
 	}
 	return;
@@ -1115,7 +1072,8 @@ PHP_METHOD(tokyotyranttable, get)
 
 		php_tt_tcmapstring_to_zval(map, return_value TSRMLS_CC);
 		tcmapdel(map);
-	}else{
+	} 
+	else {
 		zval tmpcopy;
 		char *kbuf;
 		int new_len;
@@ -2150,39 +2108,63 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	
 	REGISTER_INI_ENTRIES();
 	
-	memcpy(&tokyo_tyrant_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	memcpy(&tokyo_tyrant_table_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
-	memcpy(&tokyo_tyrant_query_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
+	memcpy(&tokyo_tyrant_object_handlers,          zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	memcpy(&tokyo_tyrant_table_object_handlers,    zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
+	memcpy(&tokyo_tyrant_query_object_handlers,    zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	memcpy(&tokyo_tyrant_iterator_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));	
 	
+
 	INIT_CLASS_ENTRY(ce, "tokyotyrant", php_tokyo_tyrant_class_methods);
 	ce.create_object = php_tokyo_tyrant_object_new;
+
+	tokyo_tyrant_object_handlers.offset    = XtOffsetOf(php_tokyo_tyrant_object, zo);
 	tokyo_tyrant_object_handlers.clone_obj = php_tokyo_tyrant_clone_object;
-	php_tokyo_tyrant_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	tokyo_tyrant_object_handlers.free_obj  = php_tokyo_tyrant_object_free_storage;
+
+	php_tokyo_tyrant_sc_entry = zend_register_internal_class(&ce);
+
+	/* - */
 
 	INIT_CLASS_ENTRY(ce, "tokyotyranttable", php_tokyo_tyrant_table_class_methods);
 	ce.create_object = php_tokyo_tyrant_object_new;
+
+	tokyo_tyrant_table_object_handlers.offset    = XtOffsetOf(php_tokyo_tyrant_object, zo);
 	tokyo_tyrant_table_object_handlers.clone_obj = php_tokyo_tyrant_clone_object;
-	php_tokyo_tyrant_table_sc_entry = zend_register_internal_class_ex(&ce, php_tokyo_tyrant_sc_entry, NULL TSRMLS_CC);
-	
+	tokyo_tyrant_table_object_handlers.free_obj  = php_tokyo_tyrant_table_object_free_storage;
+
+	php_tokyo_tyrant_table_sc_entry = zend_register_internal_class(&ce);
+
+	/* - */
+
 	INIT_CLASS_ENTRY(ce, "tokyotyrantquery", php_tokyo_tyrant_query_class_methods);
 	ce.create_object = php_tokyo_tyrant_query_object_new;
+
+	tokyo_tyrant_query_object_handlers.offset    = XtOffsetOf(php_tokyo_tyrant_query_object, zo);
 	tokyo_tyrant_query_object_handlers.clone_obj = NULL;
-	php_tokyo_tyrant_query_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
-	zend_class_implements(php_tokyo_tyrant_query_sc_entry TSRMLS_CC, 1, zend_ce_iterator);
-	
+	tokyo_tyrant_query_object_handlers.free_obj  = php_tokyo_tyrant_query_object_free_storage;
+
+	php_tokyo_tyrant_query_sc_entry = zend_register_internal_class(&ce);
+
+	/* - */
+
 	INIT_CLASS_ENTRY(ce, "tokyotyrantiterator", php_tokyo_tyrant_iterator_class_methods);
 	ce.create_object = php_tokyo_tyrant_iterator_object_new;
+
+	tokyo_tyrant_iterator_object_handlers.offset    = XtOffsetOf(php_tokyo_tyrant_iterator_object, zo);
 	tokyo_tyrant_iterator_object_handlers.clone_obj = NULL;
-	php_tokyo_tyrant_iterator_sc_entry = zend_register_internal_class(&ce TSRMLS_CC);
-	zend_class_implements(php_tokyo_tyrant_iterator_sc_entry TSRMLS_CC, 1, zend_ce_iterator);	
-	
+	tokyo_tyrant_iterator_object_handlers.free_obj  = php_tokyo_tyrant_iterator_object_free_storage;
+
+	php_tokyo_tyrant_iterator_sc_entry = zend_register_internal_class(&ce);
+
+	/* - */
+
 	INIT_CLASS_ENTRY(ce, "tokyotyrantexception", NULL);
-	php_tokyo_tyrant_exception_sc_entry = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C), NULL TSRMLS_CC);
-	php_tokyo_tyrant_exception_sc_entry->ce_flags |= ZEND_ACC_FINAL;
+	php_tokyo_tyrant_exception_sc_entry = zend_register_internal_class_ex(&ce, zend_exception_get_default());
+	php_tokyo_tyrant_exception_sc_entry->ce_flags &= ~ZEND_ACC_FINAL;
+
 	
 #define TOKYO_REGISTER_CONST_LONG(const_name, value) \
-	zend_declare_class_constant_long(php_tokyo_tyrant_sc_entry, const_name, sizeof(const_name)-1, (long)value TSRMLS_CC);	
+	zend_declare_class_constant_long(php_tokyo_tyrant_sc_entry, const_name, sizeof (const_name)-1, (zend_long) value);	
 	
 	/* Non Tokyo Tyrant constants */
 	TOKYO_REGISTER_CONST_LONG("RDBDEF_PORT", PHP_TOKYO_TYRANT_DEFAULT_PORT);
@@ -2259,7 +2241,7 @@ PHP_MINIT_FUNCTION(tokyo_tyrant)
 	return SUCCESS;
 }
 
-static int _php_tt_connections_hash_dtor(TCRDB **datas TSRMLS_DC) 
+static int _php_tt_connections_hash_dtor(TCRDB **datas) 
 {
 	TCRDB *rdb = *datas;
 	tcrdbdel(rdb);

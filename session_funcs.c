@@ -24,28 +24,23 @@
 
 #define PHP_TT_CHECKSUM_LEN 41
  
-php_tt_session *php_tt_session_init(TSRMLS_D) 
+php_tt_session *php_tt_session_init() 
 {	
 	php_tt_session *session = emalloc(sizeof(php_tt_session));
 	
 	session->pool    = NULL;
 	session->conn    = NULL;
 	
-	session->pk      = NULL;
-	session->pk_len  = 0;
+	session->pk        = NULL;
+	session->sess_rand = NULL;
 	
-	session->sess_rand     = NULL;
-	session->sess_rand_len = 0;
-	
-	session->checksum     = NULL;
-	session->checksum_len = 0;
-	
-	session->remap = 0;
+	session->checksum = NULL;
+	session->remap    = 0;
 		
 	return session;
 }
 
-void php_tt_session_deinit(php_tt_session *session TSRMLS_DC) 
+void php_tt_session_deinit(php_tt_session *session) 
 {
 	if (session->conn) {
 		php_tt_conn_deinit(session->conn TSRMLS_CC);

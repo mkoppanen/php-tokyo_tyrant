@@ -22,27 +22,26 @@
 # define _PHP_TOKYO_TYRANT_SERVER_POOL_H_
 
 typedef struct _php_tt_server {
-	char *host;
-	int   port;
+	zend_string *host;
+	int port;
 } php_tt_server;
 
 typedef struct _php_tt_server_pool {
-	php_tt_server **servers;
-	int num_servers;
+   HashTable servers;
 } php_tt_server_pool;
 
-php_tt_server_pool *php_tt_pool_init(TSRMLS_D);
+php_tt_server_pool *php_tt_pool_init();
 
-void php_tt_pool_append(php_tt_server_pool *pool, php_tt_server *server TSRMLS_DC);
+void php_tt_pool_append(php_tt_server_pool *pool, php_tt_server *server);
 
-void php_tt_pool_append2(php_tt_server_pool *pool, char *host, int port TSRMLS_DC);
+void php_tt_pool_append2(php_tt_server_pool *pool, char *host, int port);
 
-void php_tt_pool_deinit(php_tt_server_pool *pool TSRMLS_DC);
+void php_tt_pool_deinit(php_tt_server_pool *pool);
 
-php_tt_server_pool *php_tt_pool_init2(const char *save_path TSRMLS_DC);
+php_tt_server_pool *php_tt_pool_init2(const char *save_path);
 
-int php_tt_pool_map(php_tt_server_pool *pool, char *key TSRMLS_DC);
+int php_tt_pool_map(php_tt_server_pool *pool, char *key);
 
-php_tt_server *php_tt_pool_get_server(php_tt_server_pool *pool, int idx TSRMLS_DC);
+php_tt_server *php_tt_pool_get_server(php_tt_server_pool *pool, int idx);
 
 #endif

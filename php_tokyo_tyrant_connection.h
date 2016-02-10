@@ -23,17 +23,17 @@
 
 #include "php_tokyo_tyrant_private.h"
 
-php_tt_conn *php_tt_conn_init(TSRMLS_D);
+php_tt_conn *php_tt_conn_init();
 
-void php_tt_conn_deinit(php_tt_conn *conn TSRMLS_DC);
+void php_tt_conn_deinit(php_tt_conn *conn);
 
-char *php_tt_hash_key(char *host, int port, double timeout, int *key_len TSRMLS_DC);
+zend_string *php_tt_hash_key(zend_string *host, int port, double timeout);
 
-void php_tt_disconnect_ex(php_tt_conn *conn, zend_bool dealloc_rdb TSRMLS_DC);
+void php_tt_disconnect_ex(php_tt_conn *conn, zend_bool dealloc_rdb);
 
-zend_bool php_tt_connect_ex(php_tt_conn *conn, char *host, int port, double timeout, zend_bool persistent TSRMLS_DC);
+zend_bool php_tt_connect_ex(php_tt_conn *conn, zend_string *host, int port, double timeout, zend_bool persistent);
 
-zend_bool php_tt_connect(php_tokyo_tyrant_object *intern, char *host, int port, zval *params TSRMLS_DC);
+zend_bool php_tt_connect(php_tokyo_tyrant_object *intern, zend_string *host, int port, zval *params);
 
 zend_bool php_tt_connect2(php_tokyo_tyrant_object *intern, php_url *url TSRMLS_DC);
 

@@ -34,15 +34,12 @@ typedef struct _php_tt_session {
 	php_tt_server_pool *pool; /* Pool of session servers */
 	php_tt_conn *conn;        /* Connection to the session server */
 	
-	char *pk;           /* Primary key of the session data */
-	int   pk_len;       /* pk length */
-	int   idx;          /* node where the data is stored at */
+	zend_string *pk;           /* Primary key of the session data */
+	int   idx;                 /* node where the data is stored at */
 	
-	char *sess_rand;          /* The session id part */
-	int   sess_rand_len;      /* session id length */
-	
-	char *checksum;     /* Session validation checksum */
-	int   checksum_len; /* Checksum length */
+   zend_string *sess_rand;
+
+	zend_string *checksum;     /* Session validation checksum */
 	
 	zend_bool remap;    /* If 1 create_sid will remap the session to a new server */
 

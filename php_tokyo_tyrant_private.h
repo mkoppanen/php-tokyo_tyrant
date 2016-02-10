@@ -40,14 +40,15 @@ typedef struct _php_tt_conn {
 
 /* {{{ typedef struct _php_tokyo_tyrant_object */
 typedef struct _php_tokyo_tyrant_object  {
-	zend_object zo;
+	
 	php_tt_conn *conn; /* database connection */
+	zend_object zo;
 } php_tokyo_tyrant_object;
 /* }}} */
 
 /* {{{ typedef struct _php_tokyo_tyrant_query_object */
 typedef struct _php_tokyo_tyrant_query_object  {
-	zend_object zo;
+	
 	php_tt_conn *conn;
 	
 	RDBQRY *qry;
@@ -57,12 +58,14 @@ typedef struct _php_tokyo_tyrant_query_object  {
 	
 	zend_bool executed;
 
+	zend_object zo;
+
 } php_tokyo_tyrant_query_object;
 /* }}} */
 
 /* {{{ typedef struct _php_tokyo_tyrant_iterator_object */
 typedef struct _php_tokyo_tyrant_iterator_object  {
-	zend_object zo;
+	
 	php_tt_conn *conn; /* database connection */
 	zval *parent;
 	
@@ -71,6 +74,8 @@ typedef struct _php_tokyo_tyrant_iterator_object  {
 	
 	/* iterating kv or table? */
 	int iterator_type;
+
+	zend_object zo;
 	
 } php_tokyo_tyrant_iterator_object;
 /* }}} */
@@ -99,11 +104,6 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 # define TOKYO_G(v) (tokyo_tyrant_globals.v)
 #endif
 
-#define PHP_TOKYO_OBJECT (php_tokyo_tyrant_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-
-#define PHP_TOKYO_QUERY_OBJECT (php_tokyo_tyrant_query_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-
-#define PHP_TOKYO_ITERATOR_OBJECT (php_tokyo_tyrant_iterator_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
 
 #define PHP_TOKYO_CHAIN_METHOD RETURN_ZVAL(getThis(), 1, 0); 
 
@@ -170,12 +170,8 @@ ZEND_EXTERN_MODULE_GLOBALS(tokyo_tyrant);
 	spprintf(&buf, 1024, args); \
 	php_log_err(buf); \
 	efree(buf); \
-} \
+}
 
-extern zend_class_entry *php_tokyo_tyrant_sc_entry;
-extern zend_class_entry *php_tokyo_tyrant_table_sc_entry;
-extern zend_class_entry *php_tokyo_tyrant_query_sc_entry;
-extern zend_class_entry *php_tokyo_tyrant_iterator_sc_entry;
-extern zend_class_entry *php_tokyo_tyrant_exception_sc_entry;
+
 
 #endif /* _PHP_TOKYO_TYRANT_PRIVATE_H_ */

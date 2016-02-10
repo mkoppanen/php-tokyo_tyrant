@@ -22,7 +22,7 @@
 #include "php_tokyo_tyrant_session.h"
 #include "ext/standard/php_rand.h"
 
-static php_tt_server *php_tt_server_init(char *host, int port) 
+static php_tt_server *php_tt_server_init(zend_string *host, int port) 
 {
 	php_tt_server *server = emalloc(sizeof(*server));
 	
